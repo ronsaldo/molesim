@@ -1,6 +1,20 @@
 #include <stdio.h>
 #include <string.h>
 #include <string>
+#include <vector>
+#include "Vector3.hpp"
+
+struct Atom
+{
+    Vector3 position;
+    float radius;
+    float charge;
+};
+
+struct Molecule
+{
+    std::vector<Atom> atoms;
+};
 
 void printHelp()
 {
