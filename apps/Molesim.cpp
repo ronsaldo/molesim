@@ -7,6 +7,7 @@ void printHelp()
     printf(
         "Molesim [Options]\n"
         "-ligand <file>    Ligand file.\n"
+        "-receiver <file>  Receiver file.\n"
         "-h                Print help.\n"
         "-version          Print version.\n"
     );
@@ -39,12 +40,10 @@ int main(int argc, const char **argv)
             else if(!strcmp(arg, "-receiver"))
             {
                 receiverFileName = argv[++i];
-                return 0;
             }
             else if(!strcmp(arg, "-ligand"))
             {
                 ligandFileName = argv[++i];
-                return 0;
             }
             else
             {
