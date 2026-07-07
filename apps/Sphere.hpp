@@ -11,7 +11,12 @@ struct Sphere
     Sphere() = default;
     Sphere(const Vector3 &initCenter, float initRadius)
         : center(initCenter), radius(initRadius) {}
-}
+
+    float sdf(const Vector3 &p)
+    {
+        return (p - center).length() - radius;
+    }
+};
 
 
 #endif // MOLEVIS_SPHERE_HPP

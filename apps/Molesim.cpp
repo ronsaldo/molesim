@@ -5,6 +5,9 @@
 #include <memory>
 #include <chemfiles.hpp>
 #include "Vector3.hpp"
+#include "Sphere.hpp"
+
+using namespace Molesim;
 
 typedef std::shared_ptr<struct Molecule> MoleculePtr;
 MoleculePtr receiverMolecule;
@@ -21,6 +24,7 @@ struct Atom
 
 struct Molecule
 {
+    Vector3 position;
     std::vector<Atom> atoms;
     std::vector<std::pair<size_t, size_t>> bonds;
 };
