@@ -12,8 +12,7 @@
 using namespace Molesim;
 
 typedef std::shared_ptr<struct Molecule> MoleculePtr;
-MoleculePtr receiverMolecule;
-MoleculePtr ligandMolecule;
+std::vector<MoleculePtr> simulatedMolecules;
 
 struct Atom
 {
@@ -21,23 +20,24 @@ struct Atom
     float radius;
     float charge;
     uint32_t atomicNumber;
-    bool isRigid;
 };
 
 struct Molecule
 {
-    Vector3 position;
+    RigidTransform transform;
+    bool isFixedInPlace;
     std::vector<Atom> atoms;
     std::vector<std::pair<size_t, size_t>> bonds;
 };
 
-MoleculePtr loadMolecule(const std::string &filename, bool isRigid)
+MoleculePtr loadMolecule(const std::string &filename, bool isFixedInPlace)
 {
     chemfiles::Trajectory file(filename);
     chemfiles::Frame frame = file.read();
     const auto &positions = frame.positions();
 
     auto molecule = std::make_shared<Molecule> ();
+    molecule->isFixedInPlace = isFixedInPlace;
     molecule->atoms.reserve(positions.size());
 
     for(size_t i = 0; i < positions.size(); ++i)
@@ -50,7 +50,6 @@ MoleculePtr loadMolecule(const std::string &filename, bool isRigid)
         auto atom = Atom();
         atom.position = Vector3(atomPosition[0], atomPosition[1], atomPosition[2]);
         atom.charge = float(chemAtom.charge());
-        atom.isRigid = isRigid;
         molecule->atoms.push_back(atom);
     }
 
@@ -128,19 +127,21 @@ int main(int argc, const char **argv)
 
     if(!receiverFileName.empty())
     {
-        receiverMolecule = loadMolecule(receiverFileName, true);
+        auto receiverMolecule = loadMolecule(receiverFileName, true);
         if(!receiverMolecule)
             return 1;
 
         printf("Receiver loaded\n");
+        simulatedMolecules.push_back(receiverMolecule);
     }
 
     if(!ligandFileName.empty())
     {
-        ligandMolecule = loadMolecule(ligandFileName, false);
+        auto ligandMolecule = loadMolecule(ligandFileName, false);
         if(!ligandMolecule)
             return 1;
         printf("Ligand loaded\n");
+        simulatedMolecules.push_back(ligandMolecule);
     }
 
     return 0;
