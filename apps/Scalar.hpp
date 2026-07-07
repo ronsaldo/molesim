@@ -40,7 +40,7 @@ T max(const T &a, const T &b)
 template<typename T>
 T clamp(const T &x, const T &min, const T &max)
 {
-    return Math::max(Math::min(x, max), min);
+    return Molesim::max(Molesim::min(x, max), min);
 }
 
 inline bool closeTo(Scalar a, Scalar b)

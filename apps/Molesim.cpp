@@ -5,6 +5,8 @@
 #include <memory>
 #include <chemfiles.hpp>
 #include "Vector3.hpp"
+#include "Quaternion.hpp"
+#include "RigidTransform.hpp"
 #include "Sphere.hpp"
 
 using namespace Molesim;
