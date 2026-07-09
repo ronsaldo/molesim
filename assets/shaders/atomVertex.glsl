@@ -9,7 +9,10 @@ const vec2 quadVertices[4] = vec2[4](
 
 void main()
 {
-    vec3 worldPosition = vec3(quadVertices[gl_VertexIndex], 1.0);
-    vec4 viewPosition4 = CameraState.viewMatrix*vec4(worldPosition, 1.0);
-    gl_Position = CameraState.projectionMatrix*viewPosition4;
+    vec3 modelCenter = vec3(0.0, 0.0, 0.0);
+    vec3 worldCenter = modelCenter;
+    vec3 viewCenter = (CameraState.viewMatrix*vec4(worldCenter, 1.0)).xyz;
+    vec3 viewPosition = viewCenter + vec3(quadVertices[gl_VertexIndex], 1.0);
+
+    gl_Position = CameraState.projectionMatrix*vec4(viewPosition, 1.0);
 }
