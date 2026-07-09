@@ -292,6 +292,39 @@ public:
         return 0;
     }
 
+    void processKeyDownEvent(const SDL_KeyboardEvent &event)
+    {
+        switch(event.keysym.sym)
+        {
+        case SDLK_ESCAPE:
+            quitting = true;
+            break;
+        }
+    }
+
+    void processKeyUpEvent(const SDL_KeyboardEvent &event)
+    {
+        // Nothing is required yet
+    }
+
+    void processMouseMotionEvent(const SDL_MouseMotionEvent &event)
+    {
+        if(event.state & SDL_BUTTON_LMASK)
+        {
+            cameraAngle += Vector3(float(event.yrel), float(event.xrel), 0) * float(0.1f/M_PI);
+            cameraAngle.x = std::min(std::max(cameraAngle.x, float(-M_PI*0.5)), float(M_PI*0.5));
+        }
+        else if(event.state & SDL_BUTTON_RMASK)
+        {
+            cameraTranslation += cameraMatrix * Vector3(float(event.xrel), float(-event.yrel), 0) * 0.1f;
+        }
+    }
+
+    void processsMouseWheelEvent(const SDL_MouseWheelEvent &event)
+    {
+        cameraTranslation += cameraMatrix * Vector3(0, 0, -event.y*0.1f);
+    }
+
     void processEvents()
     {
         SDL_Event event;
@@ -300,12 +333,16 @@ public:
             switch(event.type)
             {
             case SDL_KEYDOWN:
-                switch(event.key.keysym.sym)
-                {
-                case SDLK_ESCAPE:
-                    quitting = true;
-                    break;
-                }
+                processKeyDownEvent(event.key);
+                break;
+            case SDL_KEYUP:
+                processKeyUpEvent(event.key);
+                break;
+            case SDL_MOUSEMOTION:
+                processMouseMotionEvent(event.motion);
+                break;
+            case SDL_MOUSEWHEEL:
+                processsMouseWheelEvent(event.wheel);
                 break;
             case SDL_QUIT:
                 quitting = true;
@@ -321,6 +358,8 @@ public:
         commandList->reset(commandAllocator, nullptr);
 
         // Update and upload the camera state
+        cameraMatrix = Matrix3x3::XRotation(cameraAngle.x) * Matrix3x3::YRotation(cameraAngle.y);
+
         auto cameraInverseMatrix = cameraMatrix.transposed();
         auto cameraInverseTranslation = cameraInverseMatrix * -cameraTranslation;
         float cameraFovY = 60.0;
