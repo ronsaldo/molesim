@@ -10,25 +10,42 @@
 #include "Quaternion.hpp"
 #include "RigidTransform.hpp"
 #include "Sphere.hpp"
+#include "AGPU/agpu.hpp"
 
 namespace Molesim
 {
 typedef std::shared_ptr<struct Molecule> MoleculePtr;
 typedef std::shared_ptr<struct Simulation> SimulationPtr;
 
-struct Atom
+struct AtomRenderingState
 {
     Vector3 position;
     float radius;
+    Vector4 color;
+};
+
+struct AtomDescription
+{
     float charge;
     uint32_t atomicNumber;
+};
+
+struct ModelState
+{
+    Matrix4x4 modelMatrix;
+    Matrix4x4 inverseModelMatrix;
 };
 
 struct Molecule
 {
     RigidTransform transform;
-    std::vector<Atom> atoms;
+    std::vector<AtomDescription> atomDescriptions;
+    std::vector<AtomRenderingState> atomStates;
     std::vector<std::pair<size_t, size_t>> bonds;
+
+    agpu_buffer_ref modelStateBuffer;
+    agpu_buffer_ref moleculeRenderingStateBuffer;
+    agpu_shader_resource_binding_ref moleculeResourceBinding;
 };
 
 struct Simulation

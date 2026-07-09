@@ -11,7 +11,8 @@ MoleculePtr loadMolecule(const std::string &filename)
     const auto &positions = frame.positions();
 
     auto molecule = std::make_shared<Molecule> ();
-    molecule->atoms.reserve(positions.size());
+    molecule->atomDescriptions.reserve(positions.size());
+    molecule->atomStates.reserve(positions.size());
 
     for(size_t i = 0; i < positions.size(); ++i)
     {
@@ -20,10 +21,19 @@ MoleculePtr loadMolecule(const std::string &filename)
 
         auto chemAtomNumber = chemAtom.atomic_number();
 
-        auto atom = Atom();
-        atom.position = Vector3(atomPosition[0], atomPosition[1], atomPosition[2]);
-        atom.charge = float(chemAtom.charge());
-        molecule->atoms.push_back(atom);
+        auto atomDesc = AtomDescription();
+        atomDesc.charge = float(chemAtom.charge());
+        atomDesc.atomicNumber = chemAtomNumber ? chemAtomNumber.value() : 1;
+        molecule->atomDescriptions.push_back(atomDesc);
+
+        auto atomState = AtomRenderingState();
+        atomState.position = Vector3(atomPosition[0], atomPosition[1], atomPosition[2]);
+        
+        auto chemRadius = chemAtom.covalent_radius();
+        atomState.radius = chemRadius ? chemRadius.value() : 0.2f;
+        atomState.color = Vector4(0.8, 0.8, 0.1, 1.0);
+        
+        molecule->atomStates.push_back(atomState);
     }
 
     auto &topology = frame.topology();

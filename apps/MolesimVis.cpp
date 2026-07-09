@@ -1,5 +1,4 @@
 #include "Simulation.hpp"
-#include "AGPU/agpu.hpp"
 #include "SDL.h"
 #include "SDL_syswm.h"
 
@@ -228,8 +227,14 @@ public:
         // Shader signature
         {
             auto shaderSignatureBuilder = device->createShaderSignatureBuilder();
+
             shaderSignatureBuilder->beginBindingBank(1);
             shaderSignatureBuilder->addBindingBankElement(AGPU_SHADER_BINDING_TYPE_UNIFORM_BUFFER, 1);
+
+            shaderSignatureBuilder->beginBindingBank(1024);
+            shaderSignatureBuilder->addBindingBankElement(AGPU_SHADER_BINDING_TYPE_UNIFORM_BUFFER, 1);
+            shaderSignatureBuilder->addBindingBankElement(AGPU_SHADER_BINDING_TYPE_STORAGE_BUFFER, 1);
+
             shaderSignature = shaderSignatureBuilder->build();
             if (!shaderSignature)
                 return 1;
@@ -279,6 +284,13 @@ public:
         commandList = device->createCommandList(AGPU_COMMAND_LIST_TYPE_DIRECT, commandAllocator, nullptr);
         commandList->close();
 
+        // Create the molecule states.
+        for(auto &molecule: simulation->molecules)
+        {
+            if(!createMoleculeRenderingStates(molecule))
+                return 1;
+        }
+
         // Enter the main loop
         while(!quitting)
         {
@@ -290,6 +302,43 @@ public:
         SDL_Quit();
 
         return 0;
+    }
+
+    bool createMoleculeRenderingStates(const MoleculePtr &molecule)
+    {
+        // Model state buffer
+        {
+            agpu_buffer_description desc;
+            desc.size = agpu_uint(sizeof(ModelState));
+            desc.heap_type = AGPU_MEMORY_HEAP_TYPE_HOST_TO_DEVICE;
+            desc.usage_modes = desc.main_usage_mode = AGPU_UNIFORM_BUFFER;
+            desc.mapping_flags = AGPU_MAP_DYNAMIC_STORAGE_BIT | AGPU_MAP_WRITE_BIT;
+            desc.stride = 0;
+
+            molecule->modelStateBuffer = device->createBuffer(&desc, nullptr);
+            if(!molecule->modelStateBuffer)
+                return false;
+        }
+
+        // Atom rendering state
+        {
+            agpu_buffer_description desc;
+            desc.size = agpu_uint(sizeof(AtomRenderingState)* molecule->atomStates.size());
+            desc.heap_type = AGPU_MEMORY_HEAP_TYPE_HOST_TO_DEVICE;
+            desc.usage_modes = desc.main_usage_mode = AGPU_STORAGE_BUFFER;
+            desc.mapping_flags = AGPU_MAP_DYNAMIC_STORAGE_BIT | AGPU_MAP_WRITE_BIT;
+            desc.stride = 0;
+
+            molecule->moleculeRenderingStateBuffer = device->createBuffer(&desc, molecule->atomStates.data());
+            if(!molecule->moleculeRenderingStateBuffer)
+                return false;
+
+        }
+
+        molecule->moleculeResourceBinding = shaderSignature->createShaderResourceBinding(1);
+        molecule->moleculeResourceBinding->bindUniformBuffer(0, molecule->modelStateBuffer);
+        molecule->moleculeResourceBinding->bindStorageBuffer(1, molecule->moleculeRenderingStateBuffer);
+        return true;
     }
 
     void processKeyDownEvent(const SDL_KeyboardEvent &event)
@@ -386,10 +435,22 @@ public:
         commandList->setViewport(0, 0, screenWidth, screenHeight);
         commandList->setScissor(0, 0, screenWidth, screenHeight);
 
-        // Draw the atoms
+        // Use the pipeline state
         commandList->usePipelineState(atomRenderingPipeline);
         commandList->useShaderResources(cameraStateBinding);
-        commandList->drawArrays(4, 1, 0, 0);
+
+        // Render the molecules
+        for(auto &molecule : simulation->molecules)
+        {
+            ModelState modelState = {};
+            modelState.modelMatrix = molecule->transform.asMatrix();
+            modelState.inverseModelMatrix = modelState.modelMatrix.inverse();
+
+            molecule->modelStateBuffer->uploadBufferData(0, sizeof(ModelState), &modelState);
+
+            commandList->useShaderResources(molecule->moleculeResourceBinding);
+            commandList->drawArrays(4, molecule->atomStates.size(), 0, 0);
+        }
 
         // Finish the command list
         commandList->endRenderPass();
