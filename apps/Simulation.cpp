@@ -28,6 +28,7 @@ MoleculePtr loadMolecule(const std::string &filename)
 
         auto atomState = AtomRenderingState();
         atomState.position = Vector3(atomPosition[0], atomPosition[1], atomPosition[2]);
+        //printf("Position: %f %f %f\n", atomPosition[0], atomPosition[1], atomPosition[2]);
         
         auto chemRadius = chemAtom.covalent_radius();
         atomState.radius = chemRadius ? chemRadius.value() : 0.2f;
@@ -44,7 +45,7 @@ MoleculePtr loadMolecule(const std::string &filename)
         molecule->bonds.push_back(std::make_pair(firstAtomIndex, secondAtomIndex));
     }
 
-    //printf("Molecule atom count: %zu\n", molecule->atoms.size());
+    printf("Molecule atom count: %zu\n", molecule->atomStates.size());
     //printf("Molecule bond count: %zu\n", molecule->bonds.size());
 
     return molecule;

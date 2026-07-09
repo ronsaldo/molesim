@@ -276,7 +276,28 @@ public:
             atomRenderingPipeline = pipelineBuilder->build();
             if (!atomRenderingPipeline)
                 return false;
+        }
 
+        // Grid rendering pipeline
+        {
+            auto vertexShader = compileShaderFromFile("assets/shaders/renderingShaderCommon.glsl", "assets/shaders/floorGridVertex.glsl", AGPU_VERTEX_SHADER);
+            auto fragmentShader = compileShaderFromFile("assets/shaders/renderingShaderCommon.glsl", "assets/shaders/floorGridFragment.glsl", AGPU_FRAGMENT_SHADER);
+            if (!vertexShader || !fragmentShader)
+                return false;
+
+            // Create the pipeline builder
+            auto pipelineBuilder = device->createPipelineBuilder();
+            pipelineBuilder->setRenderTargetFormat(0, swapChainColorBufferFormat);
+            pipelineBuilder->setDepthStencilFormat(depthBufferFormat);
+            pipelineBuilder->setShaderSignature(shaderSignature);
+            pipelineBuilder->attachShader(vertexShader);
+            pipelineBuilder->attachShader(fragmentShader);
+            pipelineBuilder->setPrimitiveType(AGPU_TRIANGLE_STRIP);
+
+            // Build the pipeline
+            gridRenderingPipeline = pipelineBuilder->build();
+            if (!gridRenderingPipeline)
+                return false;
         }
 
         // Command allocator and list
@@ -409,7 +430,7 @@ public:
         // Update and upload the camera state
         cameraMatrix = Matrix3x3::XRotation(cameraAngle.x) * Matrix3x3::YRotation(cameraAngle.y);
 
-        auto cameraInverseMatrix = cameraMatrix.transposed();
+        auto cameraInverseMatrix = cameraMatrix;
         auto cameraInverseTranslation = cameraInverseMatrix * -cameraTranslation;
         float cameraFovY = 60.0;
         float cameraAspect = float(displayWidth)/float(displayHeight);
@@ -451,6 +472,12 @@ public:
             commandList->useShaderResources(molecule->moleculeResourceBinding);
             commandList->drawArrays(4, molecule->atomStates.size(), 0, 0);
         }
+
+        // Render the grid.
+        commandList->usePipelineState(gridRenderingPipeline);
+        commandList->useShaderResources(cameraStateBinding);
+        
+        commandList->drawArrays(4, 1, 0, 0);
 
         // Finish the command list
         commandList->endRenderPass();
@@ -576,6 +603,7 @@ public:
     agpu_command_allocator_ref commandAllocator;
     agpu_command_list_ref commandList;
     agpu_pipeline_state_ref atomRenderingPipeline;
+    agpu_pipeline_state_ref gridRenderingPipeline;
 
     CameraState cameraState;
     Matrix3x3 cameraMatrix = Matrix3x3::Identity();
