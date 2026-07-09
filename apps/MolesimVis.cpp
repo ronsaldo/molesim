@@ -20,7 +20,7 @@ public:
 
     void printVersion()
     {
-        printf("Molesim version 0.1\n");
+        printf("MolesimVis version 0.1\n");
     }
 
     int main(int argc, const char **argv)
@@ -73,12 +73,6 @@ public:
                 moleculeFileNames.push_back(arg);
             }
 
-        }
-
-        if (moleculeFileNames.empty())
-        {
-            printHelp();
-            return 0;
         }
 
         // Load the molecules
@@ -216,6 +210,39 @@ public:
             mainRenderPass = device->createRenderPass(&description);
         }
 
+        // Shader signature
+        {
+            auto shaderSignatureBuilder = device->createShaderSignatureBuilder();
+            shaderSignatureBuilder->beginBindingBank(1);
+            shaderSignature = shaderSignatureBuilder->build();
+            if (!shaderSignature)
+                return 1;
+        }
+
+        // Atom pipeline state
+        {
+            auto vertexShader = compileShaderFromFile("assets/shaders/atomVertex.glsl", AGPU_VERTEX_SHADER);
+            auto fragmentShader = compileShaderFromFile("assets/shaders/atomFragment.glsl", AGPU_FRAGMENT_SHADER);
+            if (!vertexShader || !fragmentShader)
+                return false;
+
+            // Create the pipeline builder
+            auto pipelineBuilder = device->createPipelineBuilder();
+            pipelineBuilder->setRenderTargetFormat(0, swapChainColorBufferFormat);
+            pipelineBuilder->setDepthStencilFormat(depthBufferFormat);
+            pipelineBuilder->setShaderSignature(shaderSignature);
+            pipelineBuilder->attachShader(vertexShader);
+            pipelineBuilder->attachShader(fragmentShader);
+            pipelineBuilder->setPrimitiveType(AGPU_TRIANGLE_STRIP);
+
+            // Build the pipeline
+            atomRenderingPipeline = pipelineBuilder->build();
+            if (!atomRenderingPipeline)
+                return false;
+
+        }
+
+        // Command allocator and list
         commandAllocator = device->createCommandAllocator(AGPU_COMMAND_LIST_TYPE_DIRECT, commandQueue);
         commandList = device->createCommandList(AGPU_COMMAND_LIST_TYPE_DIRECT, commandAllocator, nullptr);
         commandList->close();
@@ -247,6 +274,7 @@ public:
                     quitting = true;
                     break;
                 }
+                break;
             case SDL_QUIT:
                 quitting = true;
                 break;
@@ -262,10 +290,14 @@ public:
 
         auto backBuffer = swapChain->getCurrentBackBuffer();
 
+        // Begin the render pass
         commandList->beginRenderPass(mainRenderPass, backBuffer, false);
-
         commandList->setViewport(0, 0, screenWidth, screenHeight);
         commandList->setScissor(0, 0, screenWidth, screenHeight);
+
+        // Draw the atoms
+        commandList->usePipelineState(atomRenderingPipeline);
+        commandList->drawArrays(4, 1, 0, 0);
 
         // Finish the command list
         commandList->endRenderPass();
@@ -319,6 +351,59 @@ public:
         screenHeight = swapChain->getHeight();
     }
 
+    std::string readWholeFile(const std::string &fileName)
+    {
+        FILE *file = fopen(fileName.c_str(), "rb");
+        if(!file)
+        {
+            fprintf(stderr, "Failed to open file %s\n", fileName.c_str());
+            return std::string();
+        }
+
+        // Allocate the data.
+        std::vector<char> data;
+        fseek(file, 0, SEEK_END);
+        data.resize(ftell(file));
+        fseek(file, 0, SEEK_SET);
+
+        // Read the file
+        if(fread(&data[0], data.size(), 1, file) != 1)
+        {
+            fprintf(stderr, "Failed to read file %s\n", fileName.c_str());
+            fclose(file);
+            return std::string();
+        }
+
+        fclose(file);
+        return std::string(data.begin(), data.end());
+    }
+
+    agpu_shader_ref compileShaderFromFile(const char *fileName, agpu_shader_type type)
+    {
+        auto source = readWholeFile(fileName);
+        if(source.empty())
+            return nullptr;
+
+        // Create the shader compiler.
+        agpu_offline_shader_compiler_ref shaderCompiler = device->createOfflineShaderCompiler();
+        shaderCompiler->setShaderSource(AGPU_SHADER_LANGUAGE_VGLSL, type, source.c_str(), (agpu_string_length)source.size());
+        try
+        {
+            shaderCompiler->compileShader(AGPU_SHADER_LANGUAGE_DEVICE_SHADER, nullptr);
+        }
+        catch(agpu_exception &e)
+        {
+            auto logLength = shaderCompiler->getCompilationLogLength();
+            std::unique_ptr<char[]> logBuffer(new char[logLength+1]);
+            shaderCompiler->getCompilationLog(logLength+1, logBuffer.get());
+            fprintf(stderr, "Compilation error of '%s':%s\n", fileName, logBuffer.get());
+            return nullptr;
+        }
+
+        // Create the shader and compile it.
+        return shaderCompiler->getResultAsShader();
+    }
+
 
     SDL_Window *window;
     bool quitting = false;
@@ -334,8 +419,10 @@ public:
     agpu_device_ref device;
     agpu_command_queue_ref commandQueue;
     agpu_renderpass_ref mainRenderPass;
+    agpu_shader_signature_ref shaderSignature;
     agpu_command_allocator_ref commandAllocator;
     agpu_command_list_ref commandList;
+    agpu_pipeline_state_ref atomRenderingPipeline;
 
     agpu_swap_chain_create_info currentSwapChainCreateInfo;
     agpu_swap_chain_ref swapChain;
