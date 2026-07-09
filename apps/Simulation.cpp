@@ -1,8 +1,33 @@
 #include "Simulation.hpp"
+#include "Random.hpp"
 #include <chemfiles.hpp>
+#include <unordered_map>
 
 namespace Molesim
 {
+
+static Random randColor;
+static std::unordered_map<std::string, Vector4> atomTypeColorMap;
+
+void initializeAtomColorConventions()
+{
+    atomTypeColorMap["H"] = Vector4(0.4f, 0.4f, 0.4f, 1.0f);
+    atomTypeColorMap["C"] = Vector4(0.1f, 0.1f, 0.1f, 1.0f);
+    atomTypeColorMap["N"] = Vector4(0.1f, 0.1f, 0.8f, 1.0f);
+    atomTypeColorMap["O"] = Vector4(0.8f, 0.1f, 0.1f, 1.0f);
+}
+
+Vector4
+getOrCreateColorForAtomType(const std::string &type)
+{
+    auto it = atomTypeColorMap.find(type);
+    if(it != atomTypeColorMap.end())
+        return it->second;
+    
+    auto generatedColor = randColor.randVector4(Vector4{0.1f, 0.1f, 0.1f, 1.0f}, Vector4{0.8f, 0.8f, 0.8f, 1.0f});
+    atomTypeColorMap.insert(std::make_pair(type, generatedColor));
+    return generatedColor;
+}
 
 MoleculePtr loadMolecule(const std::string &filename)
 {
@@ -33,7 +58,7 @@ MoleculePtr loadMolecule(const std::string &filename)
         
         auto chemRadius = chemAtom.covalent_radius();
         atomState.radius = chemRadius ? chemRadius.value() : 0.2f;
-        atomState.color = Vector4(0.8, 0.8, 0.1, 1.0);
+        atomState.color = getOrCreateColorForAtomType(chemAtom.type());
         
         molecule->atomStates.push_back(atomState);
     }

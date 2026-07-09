@@ -90,6 +90,7 @@ public:
 
         // Load the molecules
         simulation = std::make_shared<Simulation> ();
+        initializeAtomColorConventions();
         for(auto &fileName : moleculeFileNames)
         {
             auto molecule = loadMolecule(fileName);
@@ -204,9 +205,9 @@ public:
             colorAttachment.format = swapChainColorBufferFormat;
             colorAttachment.begin_action = AGPU_ATTACHMENT_CLEAR;
             colorAttachment.end_action = AGPU_ATTACHMENT_KEEP;
-            colorAttachment.clear_value.r = 0.025f;
-            colorAttachment.clear_value.g = 0.025f;
-            colorAttachment.clear_value.b = 0.025f;
+            colorAttachment.clear_value.r = 0.1f;
+            colorAttachment.clear_value.g = 0.1f;
+            colorAttachment.clear_value.b = 0.1f;
             colorAttachment.sample_count = 1;
 
             // Depth stencil
@@ -373,6 +374,9 @@ public:
     {
         switch(event.keysym.sym)
         {
+        case SDLK_g:
+            drawGrid = !drawGrid;
+            break;
         case SDLK_ESCAPE:
             quitting = true;
             break;
@@ -393,13 +397,13 @@ public:
         }
         else if(event.state & SDL_BUTTON_RMASK)
         {
-            cameraTranslation += cameraMatrix * Vector3(float(event.xrel), float(-event.yrel), 0) * 0.1f;
+            cameraTranslation += cameraMatrix.transposed() * Vector3(float(event.xrel), float(-event.yrel), 0) * 0.1f;
         }
     }
 
     void processsMouseWheelEvent(const SDL_MouseWheelEvent &event)
     {
-        cameraTranslation += cameraMatrix * Vector3(0, 0, -event.y*0.1f);
+        cameraTranslation += cameraMatrix.transposed() * Vector3(0, 0, -event.y);
     }
 
     void processEvents()
@@ -481,10 +485,13 @@ public:
         }
 
         // Render the grid.
-        commandList->usePipelineState(gridRenderingPipeline);
-        commandList->useShaderResources(cameraStateBinding);
-        
-        commandList->drawArrays(4, 1, 0, 0);
+        if(drawGrid)
+        {
+            commandList->usePipelineState(gridRenderingPipeline);
+            commandList->useShaderResources(cameraStateBinding);
+            
+            commandList->drawArrays(4, 1, 0, 0);
+        }
 
         // Finish the command list
         commandList->endRenderPass();
@@ -599,6 +606,7 @@ public:
     int displayWidth = 60*16;
     int displayHeight = 60*9;
     bool isVirtualReality = false;
+    bool drawGrid = true;
 
     agpu_texture_format swapChainColorBufferFormat = AGPU_TEXTURE_FORMAT_B8G8R8A8_UNORM_SRGB;
     agpu_texture_format depthBufferFormat = AGPU_TEXTURE_FORMAT_D32_FLOAT;

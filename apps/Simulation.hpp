@@ -56,6 +56,7 @@ struct Simulation
     std::vector<MoleculePtr> molecules;
 };
 
+void initializeAtomColorConventions();
 MoleculePtr loadMolecule(const std::string &filename);
 
 } // End of namespace Molesim
