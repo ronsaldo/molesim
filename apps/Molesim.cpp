@@ -12,7 +12,7 @@
 using namespace Molesim;
 
 typedef std::shared_ptr<struct Molecule> MoleculePtr;
-std::vector<MoleculePtr> simulatedMolecules;
+typedef std::shared_ptr<struct Simulation> SimulationPtr;
 
 struct Atom
 {
@@ -25,19 +25,22 @@ struct Atom
 struct Molecule
 {
     RigidTransform transform;
-    bool isFixedInPlace;
     std::vector<Atom> atoms;
     std::vector<std::pair<size_t, size_t>> bonds;
 };
 
-MoleculePtr loadMolecule(const std::string &filename, bool isFixedInPlace)
+struct Simulation
+{
+    std::vector<MoleculePtr> molecules;
+};
+
+MoleculePtr loadMolecule(const std::string &filename)
 {
     chemfiles::Trajectory file(filename);
     chemfiles::Frame frame = file.read();
     const auto &positions = frame.positions();
 
     auto molecule = std::make_shared<Molecule> ();
-    molecule->isFixedInPlace = isFixedInPlace;
     molecule->atoms.reserve(positions.size());
 
     for(size_t i = 0; i < positions.size(); ++i)
@@ -70,9 +73,7 @@ MoleculePtr loadMolecule(const std::string &filename, bool isFixedInPlace)
 void printHelp()
 {
     printf(
-        "Molesim [Options]\n"
-        "-ligand <file>    Ligand file.\n"
-        "-receiver <file>  Receiver file.\n"
+        "Molesim [Options] <molecules>\n"
         "-h                Print help.\n"
         "-version          Print version.\n"
     );
@@ -85,8 +86,8 @@ void printVersion()
 
 int main(int argc, const char **argv)
 {
-    std::string receiverFileName;
-    std::string ligandFileName;
+    std::vector<std::string> moleculeFileNames;
+    SimulationPtr simulation;
     for(int i = 1; i < argc; ++i)
     {
         auto arg = argv[i];
@@ -102,46 +103,32 @@ int main(int argc, const char **argv)
                 printVersion();
                 return 0;
             }
-            else if(!strcmp(arg, "-receiver"))
-            {
-                receiverFileName = argv[++i];
-            }
-            else if(!strcmp(arg, "-ligand"))
-            {
-                ligandFileName = argv[++i];
-            }
             else
             {
                 printHelp();
                 return 1;
             }
         }
+        else
+        {
+            moleculeFileNames.push_back(arg);
+        }
 
     }
 
-    if (receiverFileName.empty() && ligandFileName.empty())
+    if (moleculeFileNames.empty())
     {
         printHelp();
         return 0;
     }
 
-    if(!receiverFileName.empty())
+    simulation = std::make_shared<Simulation> ();
+    for(auto &fileName : moleculeFileNames)
     {
-        auto receiverMolecule = loadMolecule(receiverFileName, true);
-        if(!receiverMolecule)
+        auto molecule = loadMolecule(fileName);
+        if(!molecule)
             return 1;
-
-        printf("Receiver loaded\n");
-        simulatedMolecules.push_back(receiverMolecule);
-    }
-
-    if(!ligandFileName.empty())
-    {
-        auto ligandMolecule = loadMolecule(ligandFileName, false);
-        if(!ligandMolecule)
-            return 1;
-        printf("Ligand loaded\n");
-        simulatedMolecules.push_back(ligandMolecule);
+        simulation->molecules.push_back(molecule);
     }
 
     return 0;
