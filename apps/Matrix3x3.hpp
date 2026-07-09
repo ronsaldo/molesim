@@ -63,7 +63,7 @@ public:
             1, 0, 0,
             0, c, s,
             0, -s, c
-        ).transpose();
+        ).transposed();
     }
 
     static Matrix3x3 YRotation(Scalar angle)
@@ -74,7 +74,7 @@ public:
             c, 0, -s,
             0, 1, 0,
             s, 0, c
-        ).transpose();
+        ).transposed();
     }
 
     static Matrix3x3 ZRotation(Scalar angle)
@@ -177,7 +177,7 @@ public:
         );
     }
 
-    Matrix3x3 transpose() const
+    Matrix3x3 transposed() const
     {
         return Matrix3x3(
             m11, m21, m31,

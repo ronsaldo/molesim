@@ -5,6 +5,20 @@
 
 namespace Molesim
 {
+
+struct CameraState
+{
+    bool flipVertically = false;
+    float nearDistance = 0.1f;
+    float farDistance = 1000.0f;
+    float radiusScale = 1.0f;;
+
+    Matrix4x4 projectionMatrix;
+    Matrix4x4 inverseProjectionMatrix;
+    Matrix4x4 viewMatrix;
+    Matrix4x4 inverseViewMatrix;
+};
+
 class MolesimVis
 {
 public:
@@ -182,6 +196,7 @@ public:
 
         displayWidth = swapChain->getWidth();
         displayHeight = swapChain->getHeight();
+        cameraState.flipVertically = device->hasTopLeftNdcOrigin() == device->hasBottomLeftTextureCoordinates();
 
         // Create the main render pass
         {
@@ -214,15 +229,32 @@ public:
         {
             auto shaderSignatureBuilder = device->createShaderSignatureBuilder();
             shaderSignatureBuilder->beginBindingBank(1);
+            shaderSignatureBuilder->addBindingBankElement(AGPU_SHADER_BINDING_TYPE_UNIFORM_BUFFER, 1);
             shaderSignature = shaderSignatureBuilder->build();
             if (!shaderSignature)
                 return 1;
         }
 
+        // Camera uniform buffer
+        {
+            agpu_buffer_description desc;
+            desc.size = agpu_uint(sizeof(CameraState));
+            desc.heap_type = AGPU_MEMORY_HEAP_TYPE_HOST_TO_DEVICE;
+            desc.usage_modes = desc.main_usage_mode = AGPU_UNIFORM_BUFFER;
+            desc.mapping_flags = AGPU_MAP_DYNAMIC_STORAGE_BIT | AGPU_MAP_WRITE_BIT;
+            desc.stride = 0;
+            cameraStateBuffer = device->createBuffer(&desc, nullptr);
+            if(!cameraStateBuffer)
+                return 1;
+
+            cameraStateBinding = shaderSignature->createShaderResourceBinding(0);
+            cameraStateBinding->bindUniformBuffer(0, cameraStateBuffer);
+        }
+
         // Atom pipeline state
         {
-            auto vertexShader = compileShaderFromFile("assets/shaders/atomVertex.glsl", AGPU_VERTEX_SHADER);
-            auto fragmentShader = compileShaderFromFile("assets/shaders/atomFragment.glsl", AGPU_FRAGMENT_SHADER);
+            auto vertexShader = compileShaderFromFile("assets/shaders/renderingShaderCommon.glsl", "assets/shaders/atomVertex.glsl", AGPU_VERTEX_SHADER);
+            auto fragmentShader = compileShaderFromFile("assets/shaders/renderingShaderCommon.glsl", "assets/shaders/atomFragment.glsl", AGPU_FRAGMENT_SHADER);
             if (!vertexShader || !fragmentShader)
                 return false;
 
@@ -288,15 +320,36 @@ public:
         commandAllocator->reset();
         commandList->reset(commandAllocator, nullptr);
 
+        // Update and upload the camera state
+        auto cameraInverseMatrix = cameraMatrix.transposed();
+        auto cameraInverseTranslation = cameraInverseMatrix * -cameraTranslation;
+        float cameraFovY = 60.0;
+        float cameraAspect = float(displayWidth)/float(displayHeight);
+
+        cameraState.viewMatrix = Matrix4x4::WithMatrix3x3AndTranslation(cameraInverseMatrix, cameraInverseTranslation);
+        cameraState.inverseViewMatrix = cameraState.viewMatrix.inverse();
+
+        cameraState.projectionMatrix = Matrix4x4::ReverseDepthPerspective(cameraFovY, cameraAspect, cameraState.nearDistance, cameraState.farDistance);
+        bool flipProjectionVertically = device->hasTopLeftNdcOrigin();
+        if(flipProjectionVertically)
+            cameraState.projectionMatrix = Matrix4x4::ProjectionInvertYMatrix() * cameraState.projectionMatrix;
+
+        cameraState.inverseProjectionMatrix = cameraState.projectionMatrix.inverse();
+
+        cameraStateBuffer->uploadBufferData(0, sizeof(cameraState), &cameraState);
+
+        // Grab the back buffer
         auto backBuffer = swapChain->getCurrentBackBuffer();
 
         // Begin the render pass
+        commandList->setShaderSignature(shaderSignature);
         commandList->beginRenderPass(mainRenderPass, backBuffer, false);
         commandList->setViewport(0, 0, screenWidth, screenHeight);
         commandList->setScissor(0, 0, screenWidth, screenHeight);
 
         // Draw the atoms
         commandList->usePipelineState(atomRenderingPipeline);
+        commandList->useShaderResources(cameraStateBinding);
         commandList->drawArrays(4, 1, 0, 0);
 
         // Finish the command list
@@ -378,9 +431,9 @@ public:
         return std::string(data.begin(), data.end());
     }
 
-    agpu_shader_ref compileShaderFromFile(const char *fileName, agpu_shader_type type)
+    agpu_shader_ref compileShaderFromFile(const char *commonFileName, const char *fileName, agpu_shader_type type)
     {
-        auto source = readWholeFile(fileName);
+        auto source = readWholeFile(commonFileName) + readWholeFile(fileName);
         if(source.empty())
             return nullptr;
 
@@ -423,6 +476,14 @@ public:
     agpu_command_allocator_ref commandAllocator;
     agpu_command_list_ref commandList;
     agpu_pipeline_state_ref atomRenderingPipeline;
+
+    CameraState cameraState;
+    Matrix3x3 cameraMatrix = Matrix3x3::Identity();
+    Vector3 cameraAngle = Vector3{0, 0, 0};
+    Vector3 cameraTranslation = Vector3{0, 0.5, 2};
+
+    agpu_buffer_ref cameraStateBuffer;
+    agpu_shader_resource_binding_ref cameraStateBinding;
 
     agpu_swap_chain_create_info currentSwapChainCreateInfo;
     agpu_swap_chain_ref swapChain;
