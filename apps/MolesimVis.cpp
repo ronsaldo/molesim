@@ -1,4 +1,6 @@
 #include "Simulation.hpp"
+#include "SDL.h"
+#include "SDL_syswm.h"
 
 namespace Molesim
 {
@@ -66,9 +68,48 @@ public:
                 return 1;
             simulation->molecules.push_back(molecule);
         }
+        
+        SDL_SetHint(SDL_HINT_NO_SIGNAL_HANDLERS, "1");
+        SDL_Init(SDL_INIT_VIDEO);
+
+        window = SDL_CreateWindow("MolesimVis", SDL_WINDOWPOS_CENTERED, SDL_WINDOWPOS_CENTERED, screenWidth, screenHeight, SDL_WINDOW_SHOWN);
+
+        while(!quitting)
+        {
+            processEvents();
+        }
+
+        SDL_DestroyWindow(window);
+        SDL_Quit();
 
         return 0;
     }
+
+    void processEvents()
+    {
+        SDL_Event event;
+        while(SDL_PollEvent(&event))
+        {
+            switch(event.type)
+            {
+            case SDL_KEYDOWN:
+                switch(event.key.keysym.sym)
+                {
+                case SDLK_ESCAPE:
+                    quitting = true;
+                    break;
+                }
+            case SDL_QUIT:
+                quitting = true;
+                break;
+            }
+        }
+    }
+
+    SDL_Window *window;
+    bool quitting = false;
+    int screenWidth = 60*16;
+    int screenHeight = 60*9;
 };
 
 }
