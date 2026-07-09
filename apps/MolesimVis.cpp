@@ -189,9 +189,42 @@ public:
         displayWidth = swapChain->getWidth();
         displayHeight = swapChain->getHeight();
 
+        // Create the main render pass
+        {
+            agpu_renderpass_color_attachment_description colorAttachment = {};
+            colorAttachment.format = swapChainColorBufferFormat;
+            colorAttachment.begin_action = AGPU_ATTACHMENT_CLEAR;
+            colorAttachment.end_action = AGPU_ATTACHMENT_KEEP;
+            colorAttachment.clear_value.r = 0.025f;
+            colorAttachment.clear_value.g = 0.025f;
+            colorAttachment.clear_value.b = 0.025f;
+            colorAttachment.sample_count = 1;
+
+            // Depth stencil
+            agpu_renderpass_depth_stencil_description depthStencil = {};
+            depthStencil.format = depthBufferFormat;
+            depthStencil.begin_action = AGPU_ATTACHMENT_CLEAR;
+            depthStencil.end_action = AGPU_ATTACHMENT_KEEP;
+            depthStencil.clear_value.depth = 1.0;
+            depthStencil.sample_count = 1;
+
+            agpu_renderpass_description description = {};
+            description.color_attachment_count = 1;
+            description.color_attachments = &colorAttachment;
+            description.depth_stencil_attachment = &depthStencil;
+
+            mainRenderPass = device->createRenderPass(&description);
+        }
+
+        commandAllocator = device->createCommandAllocator(AGPU_COMMAND_LIST_TYPE_DIRECT, commandQueue);
+        commandList = device->createCommandList(AGPU_COMMAND_LIST_TYPE_DIRECT, commandAllocator, nullptr);
+        commandList->close();
+
+        // Enter the main loop
         while(!quitting)
         {
             processEvents();
+            render();
         }
 
         SDL_DestroyWindow(window);
@@ -221,6 +254,72 @@ public:
         }
     }
 
+    void render()
+    {
+        // Build the command list
+        commandAllocator->reset();
+        commandList->reset(commandAllocator, nullptr);
+
+        auto backBuffer = swapChain->getCurrentBackBuffer();
+
+        commandList->beginRenderPass(mainRenderPass, backBuffer, false);
+
+        commandList->setViewport(0, 0, screenWidth, screenHeight);
+        commandList->setScissor(0, 0, screenWidth, screenHeight);
+
+        // Finish the command list
+        commandList->endRenderPass();
+        commandList->close();
+
+        // Queue the command list
+        commandQueue->addCommandList(commandList);
+
+        swapBuffers();
+        commandQueue->finishExecution();
+    }
+
+    void swapBuffers()
+    {
+        try
+        {
+            swapChain->swapBuffers();
+        }
+        catch(agpu_exception &e)
+        {
+            auto errorCode = e.getErrorCode();
+            if(errorCode == AGPU_OUT_OF_DATE)
+            {
+                // We must recreate the swap chain.
+                recreateSwapChain();
+            }
+            else if(errorCode == AGPU_SUBOPTIMAL)
+            {
+                // Ignore this case.
+            }
+            else
+            {
+                throw e;
+            }
+        }
+    }
+
+    void recreateSwapChain()
+    {
+        int w, h;
+        SDL_GetWindowSize(window, &w, &h);
+
+        device->finishExecution();
+        auto newSwapChainCreateInfo = currentSwapChainCreateInfo;
+        newSwapChainCreateInfo.width = w;
+        newSwapChainCreateInfo.height = h;
+        newSwapChainCreateInfo.old_swap_chain = swapChain.get();
+        swapChain = device->createSwapChain(commandQueue, &newSwapChainCreateInfo);
+
+        screenWidth = swapChain->getWidth();
+        screenHeight = swapChain->getHeight();
+    }
+
+
     SDL_Window *window;
     bool quitting = false;
     int screenWidth = 60*16;
@@ -234,6 +333,9 @@ public:
 
     agpu_device_ref device;
     agpu_command_queue_ref commandQueue;
+    agpu_renderpass_ref mainRenderPass;
+    agpu_command_allocator_ref commandAllocator;
+    agpu_command_list_ref commandList;
 
     agpu_swap_chain_create_info currentSwapChainCreateInfo;
     agpu_swap_chain_ref swapChain;
