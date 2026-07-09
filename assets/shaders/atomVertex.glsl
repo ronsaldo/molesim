@@ -2,6 +2,7 @@
 
 layout(location = 0) flat out uint outAtomIndex;
 layout(location = 1) out vec3 outViewPosition;
+layout(location = 2) out vec3 outViewCenter;
 
 const vec2 quadVertices[4] = vec2[4](
     vec2(-1.0, -1.0),
@@ -20,8 +21,8 @@ void main()
 
     vec3 modelCenter = atomPosition;
     vec3 worldCenter = (ModelState.modelMatrix *vec4(modelCenter, 1.0)).xyz;
-    vec3 viewCenter = (CameraState.viewMatrix*vec4(worldCenter, 1.0)).xyz;
-    vec3 viewPosition = viewCenter + vec3(quadVertices[gl_VertexIndex], 1.0)*atomRadius;
+    outViewCenter = (CameraState.viewMatrix*vec4(worldCenter, 1.0)).xyz;
+    outViewPosition = outViewCenter + vec3(quadVertices[gl_VertexIndex], 1.0)*atomRadius;
 
-    gl_Position = CameraState.projectionMatrix*vec4(viewPosition, 1.0);
+    gl_Position = CameraState.projectionMatrix*vec4(outViewPosition, 1.0);
 }
