@@ -213,7 +213,7 @@ public:
             depthStencil.format = depthBufferFormat;
             depthStencil.begin_action = AGPU_ATTACHMENT_CLEAR;
             depthStencil.end_action = AGPU_ATTACHMENT_KEEP;
-            depthStencil.clear_value.depth = 1.0;
+            depthStencil.clear_value.depth = 0.0;
             depthStencil.sample_count = 1;
 
             agpu_renderpass_description description = {};
@@ -271,6 +271,7 @@ public:
             pipelineBuilder->attachShader(vertexShader);
             pipelineBuilder->attachShader(fragmentShader);
             pipelineBuilder->setPrimitiveType(AGPU_TRIANGLE_STRIP);
+            pipelineBuilder->setDepthState(true, true, AGPU_GREATER_EQUAL);
 
             // Build the pipeline
             atomRenderingPipeline = pipelineBuilder->build();
@@ -293,6 +294,11 @@ public:
             pipelineBuilder->attachShader(vertexShader);
             pipelineBuilder->attachShader(fragmentShader);
             pipelineBuilder->setPrimitiveType(AGPU_TRIANGLE_STRIP);
+            pipelineBuilder->setDepthState(true, false, AGPU_GREATER_EQUAL);
+            pipelineBuilder->setCullMode(AGPU_CULL_MODE_NONE);
+            pipelineBuilder->setBlendState(-1, true);
+            pipelineBuilder->setBlendFunction(-1, AGPU_BLENDING_ONE, AGPU_BLENDING_INVERTED_SRC_ALPHA, AGPU_BLENDING_OPERATION_ADD,
+            AGPU_BLENDING_ONE, AGPU_BLENDING_INVERTED_SRC_ALPHA, AGPU_BLENDING_OPERATION_ADD);
 
             // Build the pipeline
             gridRenderingPipeline = pipelineBuilder->build();
