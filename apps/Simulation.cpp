@@ -23,6 +23,7 @@ MoleculePtr loadMolecule(const std::string &filename)
 
         auto atomDesc = AtomDescription();
         atomDesc.charge = float(chemAtom.charge());
+        atomDesc.mass = chemAtom.mass();
         atomDesc.atomicNumber = chemAtomNumber ? chemAtomNumber.value() : 1;
         molecule->atomDescriptions.push_back(atomDesc);
 
@@ -49,6 +50,23 @@ MoleculePtr loadMolecule(const std::string &filename)
     //printf("Molecule bond count: %zu\n", molecule->bonds.size());
 
     return molecule;
+}
+
+void Molecule::translateToCenterOfMass()
+{
+    Vector3 centerOfMass = Vector3(0);
+    float totalMass = 0;
+    for(size_t i = 0; i < atomStates.size(); ++i)
+    {
+        float mass = atomDescriptions[i].mass;
+        centerOfMass += atomStates[i].position*mass;
+        totalMass += mass;
+    }
+
+    centerOfMass /= totalMass;
+    printf("Center of mass: %f %f %f\n", centerOfMass.x, centerOfMass.y, centerOfMass.z);
+    for(auto &state : atomStates)
+        state.position -= centerOfMass;
 }
 
 } // End of namespace Molesim

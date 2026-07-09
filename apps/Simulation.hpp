@@ -27,6 +27,7 @@ struct AtomRenderingState
 struct AtomDescription
 {
     float charge;
+    float mass;
     uint32_t atomicNumber;
 };
 
@@ -46,6 +47,8 @@ struct Molecule
     agpu_buffer_ref modelStateBuffer;
     agpu_buffer_ref moleculeRenderingStateBuffer;
     agpu_shader_resource_binding_ref moleculeResourceBinding;
+
+    void translateToCenterOfMass();
 };
 
 struct Simulation

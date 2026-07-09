@@ -95,6 +95,7 @@ public:
             auto molecule = loadMolecule(fileName);
             if(!molecule)
                 return 1;
+            molecule->translateToCenterOfMass();
             simulation->molecules.push_back(molecule);
         }
 
