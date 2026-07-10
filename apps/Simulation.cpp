@@ -223,7 +223,7 @@ void Simulation::integrateMovement(float deltaTime)
 void Simulation::detectAndResolveCollisions()
 {
     auto broadphasePairs = computeBroadphase();
-    printf("broadphasePairs %zu\n", broadphasePairs.size());
+    computeNarrowPhase(broadphasePairs);
 }
 
 std::vector<std::pair<MoleculePtr, MoleculePtr>> Simulation::computeBroadphase()
@@ -243,6 +243,52 @@ std::vector<std::pair<MoleculePtr, MoleculePtr>> Simulation::computeBroadphase()
     }
 
     return broadphasePairs;
+}
+
+void Simulation::computeNarrowPhase(const std::vector<std::pair<MoleculePtr, MoleculePtr>> &broadphasePairs)
+{
+    contactPoints.clear();
+    for(auto &pair: broadphasePairs)
+        computePairNarrowPhase(pair.first, pair.second);
+    printf("Contact points: %zu\n", contactPoints.size());
+}
+
+void Simulation::computePairNarrowPhase(const MoleculePtr &firstMolecule, const MoleculePtr &secondMolecule)
+{
+    computeNaivePairNarrowPhase(firstMolecule, secondMolecule);
+}
+
+void Simulation::computeNaivePairNarrowPhase(const MoleculePtr &firstMolecule, const MoleculePtr &secondMolecule)
+{
+    for(size_t i = 0; i < firstMolecule->atomStates.size(); ++i)
+    {
+        auto &firstAtom = firstMolecule->atomStates[i];
+        auto firstAtomWorldPosition = firstMolecule->transform.transformPosition(firstAtom.position);
+        for(size_t j = 0; j < secondMolecule->atomStates.size(); ++j)
+        {
+            auto &secondAtom = secondMolecule->atomStates[j];
+            auto secondAtomWorldPosition = secondMolecule->transform.transformPosition(secondAtom.position);
+
+            auto deltaVector = firstAtomWorldPosition - secondAtomWorldPosition;
+            auto deltaLength2 = deltaVector.length2();
+            auto totalRadius = firstAtom.radius + secondAtom.radius;
+            if(deltaLength2 <= totalRadius*totalRadius)
+                emitContactPoint(firstAtomWorldPosition, firstAtom.radius, secondAtomWorldPosition, secondAtom.radius, firstMolecule, secondMolecule);
+        }
+    }
+}
+
+inline void Simulation::emitContactPoint(const Vector3 &firstAtomWorldPosition, Scalar firstAtomRadius, Vector3 &secondAtomWorldPosition, Scalar secondAtomRadius, const MoleculePtr &firstMolecule, const MoleculePtr &secondMolecule)
+{
+    auto deltaVector = firstAtomWorldPosition - secondAtomWorldPosition;
+    auto totalRadius = firstAtomRadius + secondAtomRadius;
+
+    auto contactPoint = ContactPoint();
+    contactPoint.normal = deltaVector.normalized();
+    contactPoint.penetrationDistance = totalRadius - deltaVector.length();
+    contactPoint.firstMolecule = firstMolecule.get();
+    contactPoint.secondMolecule = secondMolecule.get();
+    contactPoints.push_back(contactPoint);
 }
 
 void Simulation::update(float deltaTime)

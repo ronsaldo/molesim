@@ -38,6 +38,14 @@ struct ModelState
     Matrix4x4 inverseModelMatrix;
 };
 
+struct ContactPoint
+{
+    Vector3 normal;
+    Scalar penetrationDistance;
+    Molecule *firstMolecule;
+    Molecule *secondMolecule;
+};
+
 struct Molecule
 {
     RigidTransform transform;
@@ -84,12 +92,17 @@ struct Molecule
 struct Simulation
 {
     std::vector<MoleculePtr> molecules;
+    std::vector<ContactPoint> contactPoints;
 
     void resetNetForces();
     void evaluateForceGenerators(float deltaTime);
     void integrateMovement(float deltaTime);
     void detectAndResolveCollisions();
     std::vector<std::pair<MoleculePtr, MoleculePtr>> computeBroadphase();
+    void computeNarrowPhase(const std::vector<std::pair<MoleculePtr, MoleculePtr>> &broadphasePairs);
+    void computePairNarrowPhase(const MoleculePtr &firstMolecule, const MoleculePtr &secondMolecule);
+    void computeNaivePairNarrowPhase(const MoleculePtr &firstMolecule, const MoleculePtr &secondMolecule);
+    void emitContactPoint(const Vector3 &firstAtomWorldPosition, Scalar firstAtomRadius, Vector3 &secondAtomWorldPosition, Scalar secondAtomRadius, const MoleculePtr &firstMolecule, const MoleculePtr &secondMolecule);
 
     void update(float deltaTime);
 };
