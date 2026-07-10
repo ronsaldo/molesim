@@ -46,12 +46,19 @@ struct Molecule
     Scalar angularDamping = 0.2f;
 
     Vector3 linearVelocity;
+    Vector3 linearVelocityIntegrationDelta;
     Vector3 angularVelocity;
+    Vector3 angularVelocityIntegrationDelta;
 
     Vector3 netForce;
     Vector3 netTorque;
     float totalMass = 0.0f;
     float inverseTotalMass = 0.0;
+
+    Matrix3x3 inertiaTensor;
+    Matrix3x3 inverseInertiaTensor;
+    Matrix3x3 worldInertiaTensor;
+    Matrix3x3 worldInverseInertiaTensor;
 
     AABox boundingBox;
 
@@ -65,9 +72,12 @@ struct Molecule
 
     void resetNetForces();
     void integrateMovement(float deltaTime);
+    void setPositionAndOrientation(const Vector3 &newPosition, const Quaternion &newOrientation);
 
     void translateToCenterOfMass();
     void computeBoundingBox();
+    void computeInertiaTensor();
+    void updateWorldInertiaTensor();
     void prepareForSimulation();
 };
 

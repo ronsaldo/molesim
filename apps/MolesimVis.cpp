@@ -387,7 +387,7 @@ public:
             quitting = true;
             break;
         case SDLK_SPACE:
-            isSimulating = true;
+            isSimulating = !isSimulating;
             break;
         }
     }

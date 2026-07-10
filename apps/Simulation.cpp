@@ -111,10 +111,37 @@ void Molecule::computeBoundingBox()
 
 }
 
+void Molecule::computeInertiaTensor()
+{
+    // Use the aabox
+    // TODO: Use the steiner theorem for something more accurate.
+    auto halfExtent = boundingBox.halfExtent();
+    auto extent = halfExtent* Vector3(2.0);
+    auto extent2 = extent*extent;
+    inertiaTensor = Matrix3x3(
+        (extent2.y + extent2.z)/12*totalMass, 0, 0,
+        0, (extent2.x + extent2.z)/12*totalMass, 0,
+        0, 0, (extent2.x + extent2.y)/12*totalMass
+    );
+    inverseInertiaTensor = inertiaTensor.inverse();
+
+    updateWorldInertiaTensor();
+}
+
+void Molecule::updateWorldInertiaTensor()
+{
+    auto rotationMatrix = transform.rotation.asMatrix();
+    auto transposedRotationMatrix = rotationMatrix.transposed();
+
+	worldInertiaTensor = rotationMatrix * inertiaTensor * transposedRotationMatrix;
+	worldInverseInertiaTensor = rotationMatrix * inverseInertiaTensor * transposedRotationMatrix;
+}
+
 void Molecule::prepareForSimulation()
 {
     translateToCenterOfMass();
     computeBoundingBox();
+    computeInertiaTensor();
 }
 
 void Molecule::resetNetForces()
@@ -125,7 +152,53 @@ void Molecule::resetNetForces()
 
 void Molecule::integrateMovement(float deltaTime)
 {
-    transform.translation += linearVelocity *deltaTime;
+    // Compute the linear acceleration
+    auto linearAcceleration = netForce*Vector3(inverseTotalMass);
+
+    // Integrate the linear acceleration
+    auto integratedVelocity = linearVelocity + linearAcceleration*Vector3(deltaTime);
+
+    // Apply the linear damping
+    auto linearDampingFactor = clamp(powf(1.0f - linearDamping, deltaTime), 0.0f, 1.0f);
+    integratedVelocity *= linearDampingFactor;
+
+    // Integrate the linear velocity
+    linearVelocityIntegrationDelta = integratedVelocity - linearVelocity;
+    linearVelocity = integratedVelocity;
+
+    // Compute the angular acceleration.
+    auto angularAcceleration = worldInverseInertiaTensor * netTorque;
+
+    // Integrate the angular acceleration.
+    auto integratedAngularVelocity = angularVelocity + angularAcceleration*Vector3(deltaTime);
+
+    // Apply the angular damping
+    auto angularDampingFactor = clamp(powf(1.0f - angularDamping, deltaTime), 0.0f, 1.0f);
+    integratedAngularVelocity *= angularDampingFactor;
+
+    // Integrate the angular velocity
+    angularVelocityIntegrationDelta = integratedAngularVelocity - angularVelocity;
+    angularVelocity = integratedAngularVelocity;
+
+    // Integrate the position.
+    auto integratedPosition = transform.translation + linearVelocity*Vector3(deltaTime);
+
+    // Integrate the orientation
+    auto integratedOrientation = Quaternion(angularVelocity*Vector3(0.5f*deltaTime)).exp() * transform.rotation;
+    integratedOrientation = integratedOrientation.normalized();
+
+    //printf("Linear velocity %f %f %f\n", linearVelocity.x, linearVelocity.y, linearVelocity.z);
+    //printf("Angular velocity %f %f %f\n", angularVelocity.x, angularVelocity.y, angularVelocity.z);
+
+    setPositionAndOrientation(integratedPosition, integratedOrientation);
+    //printf("damping %f %f\n", linearDampingFactor, angularDampingFactor);
+    //transform.translation += linearVelocity *deltaTime;
+}
+
+void Molecule::setPositionAndOrientation(const Vector3 &newPosition, const Quaternion &newOrientation)
+{
+    transform = RigidTransform::WithRotationAndTranslation(newOrientation, newPosition);
+    updateWorldInertiaTensor();
 }
 
 void Simulation::resetNetForces()
