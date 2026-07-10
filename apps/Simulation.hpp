@@ -9,6 +9,7 @@
 #include "Vector3.hpp"
 #include "Quaternion.hpp"
 #include "RigidTransform.hpp"
+#include "AABox.hpp"
 #include "Sphere.hpp"
 #include "AGPU/agpu.hpp"
 
@@ -40,6 +41,20 @@ struct ModelState
 struct Molecule
 {
     RigidTransform transform;
+
+    Scalar linearDamping = 0.2f;
+    Scalar angularDamping = 0.2f;
+
+    Vector3 linearVelocity;
+    Vector3 angularVelocity;
+
+    Vector3 netForce;
+    Vector3 netTorque;
+    float totalMass = 0.0f;
+    float inverseTotalMass = 0.0;
+
+    AABox boundingBox;
+
     std::vector<AtomDescription> atomDescriptions;
     std::vector<AtomRenderingState> atomStates;
     std::vector<std::pair<size_t, size_t>> bonds;
@@ -48,12 +63,24 @@ struct Molecule
     agpu_buffer_ref moleculeRenderingStateBuffer;
     agpu_shader_resource_binding_ref moleculeResourceBinding;
 
+    void resetNetForces();
+    void integrateMovement(float deltaTime);
+
     void translateToCenterOfMass();
+    void computeBoundingBox();
+    void prepareForSimulation();
 };
 
 struct Simulation
 {
     std::vector<MoleculePtr> molecules;
+
+    void resetNetForces();
+    void evaluateForceGenerators(float deltaTime);
+    void integrateMovement(float deltaTime);
+    void detectAndResolveCollisions();
+
+    void update(float deltaTime);
 };
 
 void initializeAtomColorConventions();

@@ -96,7 +96,7 @@ public:
             auto molecule = loadMolecule(fileName);
             if(!molecule)
                 return 1;
-            molecule->translateToCenterOfMass();
+            molecule->prepareForSimulation();
             simulation->molecules.push_back(molecule);
         }
 
@@ -324,6 +324,12 @@ public:
         while(!quitting)
         {
             processEvents();
+            if(isSimulating)
+            {
+                const auto SimulationTimeStep = 1.0f / 60.0f;
+                simulation->update(SimulationTimeStep);
+            }
+                
             render();
         }
 
@@ -379,6 +385,9 @@ public:
             break;
         case SDLK_ESCAPE:
             quitting = true;
+            break;
+        case SDLK_SPACE:
+            isSimulating = true;
             break;
         }
     }
@@ -601,6 +610,7 @@ public:
 
     SDL_Window *window;
     bool quitting = false;
+    bool isSimulating = false;
     int screenWidth = 60*16;
     int screenHeight = 60*9;
     int displayWidth = 60*16;

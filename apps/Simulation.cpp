@@ -80,7 +80,7 @@ MoleculePtr loadMolecule(const std::string &filename)
 void Molecule::translateToCenterOfMass()
 {
     Vector3 centerOfMass = Vector3(0);
-    float totalMass = 0;
+    totalMass = 0;
     for(size_t i = 0; i < atomStates.size(); ++i)
     {
         float mass = atomDescriptions[i].mass;
@@ -92,6 +92,72 @@ void Molecule::translateToCenterOfMass()
     printf("Center of mass: %f %f %f\n", centerOfMass.x, centerOfMass.y, centerOfMass.z);
     for(auto &state : atomStates)
         state.position -= centerOfMass;
+
+    inverseTotalMass = 1.0f / totalMass;
+}
+
+void Molecule::computeBoundingBox()
+{
+    boundingBox = AABox::Empty();
+    for(auto &atom : atomStates)
+    {
+        AABox atomBoundingBox = AABox::ForSphere(atom.position, atom.radius);
+        boundingBox.insertBox(atomBoundingBox);
+    }
+
+    printf("Molecule bbox: %f %f %f - %f %f %f\n",
+        boundingBox.minCorner.x, boundingBox.minCorner.y, boundingBox.minCorner.z,
+        boundingBox.maxCorner.x, boundingBox.maxCorner.y, boundingBox.maxCorner.z);
+
+}
+
+void Molecule::prepareForSimulation()
+{
+    translateToCenterOfMass();
+    computeBoundingBox();
+}
+
+void Molecule::resetNetForces()
+{
+    netForce = Vector3::Zeros();
+    netTorque = Vector3::Zeros();
+}
+
+void Molecule::integrateMovement(float deltaTime)
+{
+    transform.translation += linearVelocity *deltaTime;
+}
+
+void Simulation::resetNetForces()
+{
+    // Update the molecules themselves.
+    for(auto &molecule : molecules)
+        molecule->resetNetForces();
+}
+
+void Simulation::evaluateForceGenerators(float deltaTime)
+{
+}
+
+void Simulation::integrateMovement(float deltaTime)
+{
+    // Update the molecules themselves.
+    for(auto &molecule : molecules)
+        molecule->integrateMovement(deltaTime);
+
+}
+
+void Simulation::detectAndResolveCollisions()
+{
+}
+
+
+void Simulation::update(float deltaTime)
+{
+    resetNetForces();
+    evaluateForceGenerators(deltaTime);
+    integrateMovement(deltaTime);
+    detectAndResolveCollisions();
 }
 
 } // End of namespace Molesim
