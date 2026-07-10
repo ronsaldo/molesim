@@ -89,6 +89,7 @@ struct Simulation
     void evaluateForceGenerators(float deltaTime);
     void integrateMovement(float deltaTime);
     void detectAndResolveCollisions();
+    std::vector<std::pair<MoleculePtr, MoleculePtr>> computeBroadphase();
 
     void update(float deltaTime);
 };

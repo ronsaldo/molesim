@@ -222,8 +222,28 @@ void Simulation::integrateMovement(float deltaTime)
 
 void Simulation::detectAndResolveCollisions()
 {
+    auto broadphasePairs = computeBroadphase();
+    printf("broadphasePairs %zu\n", broadphasePairs.size());
 }
 
+std::vector<std::pair<MoleculePtr, MoleculePtr>> Simulation::computeBroadphase()
+{
+    std::vector<std::pair<MoleculePtr, MoleculePtr>> broadphasePairs;
+    for(size_t i = 0; i < molecules.size(); ++i)
+    {
+        auto &firstMolecule = molecules[i];
+        auto firstBoundingBox = firstMolecule->boundingBox.transformedWith(firstMolecule->transform);
+        for(size_t j = i + 1; j < molecules.size(); ++j)
+        {
+            auto &secondMolecule = molecules[j];
+            auto secondBoundingBox = secondMolecule->boundingBox.transformedWith(secondMolecule->transform);
+            if(firstBoundingBox.hasIntersectionWithBox(secondBoundingBox))
+                broadphasePairs.push_back(std::make_pair(firstMolecule, secondMolecule));
+        }
+    }
+
+    return broadphasePairs;
+}
 
 void Simulation::update(float deltaTime)
 {
