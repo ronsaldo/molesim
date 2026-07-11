@@ -87,6 +87,9 @@ struct Molecule
     void computeInertiaTensor();
     void updateWorldInertiaTensor();
     void prepareForSimulation();
+
+    void createFirstTestMolecule();
+    void createSecondTestMolecule();
 };
 
 struct Simulation

@@ -144,6 +144,40 @@ void Molecule::prepareForSimulation()
     computeInertiaTensor();
 }
 
+void Molecule::createFirstTestMolecule()
+{
+    {
+        AtomDescription atomDescription;
+        atomDescription.mass = 1.0;
+        atomDescriptions.push_back(atomDescription);
+
+        AtomRenderingState atomState;
+        atomState.position = Vector3();
+        atomState.radius = 1.0;
+        atomState.color = Vector4(0.8f, 0.1f, 0.1f, 1.0f);
+        atomStates.push_back(atomState);
+    }
+    prepareForSimulation();
+    transform.translation = Vector3(-0.25, 0.0, 0.0);
+}
+
+void Molecule::createSecondTestMolecule()
+{
+    {
+        AtomDescription atomDescription;
+        atomDescription.mass = 1.0;
+        atomDescriptions.push_back(atomDescription);
+
+        AtomRenderingState atomState;
+        atomState.position = Vector3();
+        atomState.radius = 1.0;
+        atomState.color = Vector4(0.8f, 0.1f, 0.1f, 1.0f);
+        atomStates.push_back(atomState);
+    }
+    prepareForSimulation();
+    transform.translation = Vector3(0.25, 0.0, 0.0);
+}
+
 void Molecule::resetNetForces()
 {
     netForce = Vector3::Zeros();

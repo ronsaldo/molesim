@@ -100,6 +100,22 @@ public:
             simulation->molecules.push_back(molecule);
         }
 
+        // Create the test datasets
+        if(moleculeFileNames.empty())
+        {
+            {
+                auto firstMolecule = std::make_shared<Molecule> ();
+                firstMolecule->createFirstTestMolecule();
+                simulation->molecules.push_back(firstMolecule);
+            }
+
+            {
+                auto secondMolecule = std::make_shared<Molecule> ();
+                secondMolecule->createSecondTestMolecule();
+                simulation->molecules.push_back(secondMolecule);
+            }
+        }
+
         // Get the platform.
         agpu_uint numPlatforms;
         agpuGetPlatforms(0, nullptr, &numPlatforms);
