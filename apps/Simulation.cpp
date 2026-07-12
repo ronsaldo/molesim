@@ -307,21 +307,40 @@ void Simulation::computeNaivePairNarrowPhase(const MoleculePtr &firstMolecule, c
             auto deltaLength2 = deltaVector.length2();
             auto totalRadius = firstAtom.radius + secondAtom.radius;
             if(deltaLength2 <= totalRadius*totalRadius)
-                emitContactPoint(firstAtomWorldPosition, firstAtom.radius, secondAtomWorldPosition, secondAtom.radius, firstMolecule, secondMolecule);
+            {
+                emitContactPoint(firstMolecule, secondMolecule, i, j);
+            }
         }
     }
 }
 
-inline void Simulation::emitContactPoint(const Vector3 &firstAtomWorldPosition, Scalar firstAtomRadius, Vector3 &secondAtomWorldPosition, Scalar secondAtomRadius, const MoleculePtr &firstMolecule, const MoleculePtr &secondMolecule)
+
+void ContactPoint::computeNormalAndPenetrationDistance()
 {
+    auto &firstAtom = firstMolecule->atomStates[firstAtomIndex];
+    auto &secondAtom = firstMolecule->atomStates[secondAtomIndex];
+
+    auto firstAtomWorldPosition = firstMolecule->transform.transformPosition(firstAtom.position);
+    auto secondAtomWorldPosition = secondMolecule->transform.transformPosition(secondMolecule->atomStates[secondAtomIndex].position);
+
     auto deltaVector = firstAtomWorldPosition - secondAtomWorldPosition;
-    auto totalRadius = firstAtomRadius + secondAtomRadius;
+    auto totalRadius = firstAtom.radius + secondAtom.radius;
+
+    normal = deltaVector.normalized();
+    penetrationDistance = totalRadius - deltaVector.length();
+    //printf("Normal %f %f %f - distance %f totalRadius %f\n", normal.x, normal.y, normal.z, penetrationDistance, totalRadius);
+}
+
+inline void Simulation::emitContactPoint(const MoleculePtr &firstMolecule, const MoleculePtr &secondMolecule, size_t firstAtomIndex, size_t secondAtomIndex)
+{
 
     auto contactPoint = ContactPoint();
-    contactPoint.normal = deltaVector.normalized();
-    contactPoint.penetrationDistance = totalRadius - deltaVector.length();
     contactPoint.firstMolecule = firstMolecule.get();
     contactPoint.secondMolecule = secondMolecule.get();
+    contactPoint.firstAtomIndex = firstAtomIndex;
+    contactPoint.secondMolecule = secondMolecule.get();
+    contactPoint.secondAtomIndex = secondAtomIndex;
+    contactPoint.computeNormalAndPenetrationDistance();
     contactPoints.push_back(contactPoint);
 }
 

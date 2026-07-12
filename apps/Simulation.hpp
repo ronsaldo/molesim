@@ -44,6 +44,10 @@ struct ContactPoint
     Scalar penetrationDistance;
     Molecule *firstMolecule;
     Molecule *secondMolecule;
+    size_t firstAtomIndex;
+    size_t secondAtomIndex; 
+
+    void computeNormalAndPenetrationDistance();
 };
 
 struct Molecule
@@ -105,7 +109,7 @@ struct Simulation
     void computeNarrowPhase(const std::vector<std::pair<MoleculePtr, MoleculePtr>> &broadphasePairs);
     void computePairNarrowPhase(const MoleculePtr &firstMolecule, const MoleculePtr &secondMolecule);
     void computeNaivePairNarrowPhase(const MoleculePtr &firstMolecule, const MoleculePtr &secondMolecule);
-    void emitContactPoint(const Vector3 &firstAtomWorldPosition, Scalar firstAtomRadius, Vector3 &secondAtomWorldPosition, Scalar secondAtomRadius, const MoleculePtr &firstMolecule, const MoleculePtr &secondMolecule);
+    void emitContactPoint(const MoleculePtr &firstMolecule, const MoleculePtr &secondMolecule, size_t firstAtomIndex, size_t secondAtomIndex);
 
     void update(float deltaTime);
 };
