@@ -235,6 +235,11 @@ void Molecule::setPositionAndOrientation(const Vector3 &newPosition, const Quate
     updateWorldInertiaTensor();
 }
 
+void Molecule::translateBy(const Vector3 &translation)
+{
+    transform.translation += translation;
+}
+
 void Molecule::translateByAndRotateBy(const Vector3 &translation, const Vector3 &angularIncrement)
 {
     transform.translation += translation;
@@ -242,14 +247,29 @@ void Molecule::translateByAndRotateBy(const Vector3 &translation, const Vector3 
     updateWorldInertiaTensor();
 }
 
-void Molecule::applyMovementAtRelativePoint(Scalar movement, const Vector3 &relativePoint, const Vector3 &normalDirection)
+void Molecule::applyMovementAtRelativePoint(Scalar movement, const Vector3 &relativePoint, const Vector3 &movementDirection)
 {
     auto linearMovement = movement * inverseTotalMass;
+    auto angularDirection = worldInverseInertiaTensor * relativePoint.cross(movementDirection);
+    auto angularFactor = angularDirection.length();
+    if(closeTo(angularFactor, 0))
+        return translateBy(movementDirection*Vector3(linearMovement));
 
-    // TODO: Compute the angular movement.
+    angularDirection = angularDirection / angularFactor;
+    auto angularMovement = movement*angularFactor;
+    if(abs(angularMovement) <= 0)
+        return translateBy(movementDirection*Vector3(linearMovement));
+
+    if(abs(angularMovement) > angularMovementLimit)
+    {
+        angularMovement = angularMovement >= 0 ? angularMovementLimit : -angularMovementLimit;
+        auto angularSpentMovement = angularMovement / angularFactor; 
+
+        linearMovement = (movement - angularSpentMovement)*inverseTotalMass;
+    }
 
     //printf("Linear movement %f\n", linearMovement);
-    translateByAndRotateBy(normalDirection*linearMovement, Vector3::Zeros());
+    translateByAndRotateBy(movementDirection*Vector3(linearMovement), angularDirection*Vector3(angularMovement));
 }
 
 void Molecule::applyImpulse(const Vector3 &impulse)
