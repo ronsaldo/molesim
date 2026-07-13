@@ -111,6 +111,11 @@ struct Simulation
     void computeNaivePairNarrowPhase(const MoleculePtr &firstMolecule, const MoleculePtr &secondMolecule);
     void emitContactPoint(const MoleculePtr &firstMolecule, const MoleculePtr &secondMolecule, size_t firstAtomIndex, size_t secondAtomIndex);
 
+    void resolveContactManifoldsCollisionsAndConstraints();
+    void resolveContactCollisionResponse(ContactPoint &contact);
+    void resolveContactConstraint(ContactPoint &contact, Scalar relaxationFactor);
+
+
     void update(float deltaTime);
 };
 

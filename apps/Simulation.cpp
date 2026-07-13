@@ -258,6 +258,7 @@ void Simulation::detectAndResolveCollisions()
 {
     auto broadphasePairs = computeBroadphase();
     computeNarrowPhase(broadphasePairs);
+    resolveContactManifoldsCollisionsAndConstraints();
 }
 
 std::vector<std::pair<MoleculePtr, MoleculePtr>> Simulation::computeBroadphase()
@@ -343,6 +344,30 @@ inline void Simulation::emitContactPoint(const MoleculePtr &firstMolecule, const
     contactPoint.computeNormalAndPenetrationDistance();
     contactPoints.push_back(contactPoint);
 }
+
+void Simulation::resolveContactManifoldsCollisionsAndConstraints()
+{
+    const int IterationCount = 5;
+    for(int i = 0; i < IterationCount; ++i)
+    {
+        // Collision responses
+        for(auto &contact : contactPoints)
+            resolveContactCollisionResponse(contact);
+
+        // Collision constraints
+        for(auto &contact : contactPoints)
+            resolveContactConstraint(contact, 1);
+    }
+}
+
+void Simulation::resolveContactCollisionResponse(ContactPoint &contact)
+{
+}
+
+void Simulation::resolveContactConstraint(ContactPoint &contact, Scalar relaxationFactor)
+{
+}
+
 
 void Simulation::update(float deltaTime)
 {
