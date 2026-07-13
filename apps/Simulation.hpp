@@ -47,7 +47,13 @@ struct ContactPoint
     size_t firstAtomIndex;
     size_t secondAtomIndex; 
 
+    Vector3 firstRelativePoint;
+    Vector3 secondRelativePoint;
+
     void computeNormalAndPenetrationDistance();
+    Scalar computeInverseInertia();
+    Scalar computeInverseLinearInertia();
+    Scalar computeInverseAngularInertia();
 };
 
 struct Molecule
@@ -85,6 +91,11 @@ struct Molecule
     void resetNetForces();
     void integrateMovement(float deltaTime);
     void setPositionAndOrientation(const Vector3 &newPosition, const Quaternion &newOrientation);
+    void translateByAndRotateBy(const Vector3 &translation, const Vector3 &angularIncrement);
+
+    void applyMovementAtRelativePoint(Scalar movement, const Vector3 &relativePoint, const Vector3 &normalDirection);
+    void applyImpulse(const Vector3 &impulse);
+    void applyImpulseInRelativePosition(const Vector3 &impulse, const Vector3 &relativePoint);
 
     void translateToCenterOfMass();
     void computeBoundingBox();

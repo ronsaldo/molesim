@@ -235,6 +235,32 @@ void Molecule::setPositionAndOrientation(const Vector3 &newPosition, const Quate
     updateWorldInertiaTensor();
 }
 
+void Molecule::translateByAndRotateBy(const Vector3 &translation, const Vector3 &angularIncrement)
+{
+    transform.translation += translation;
+    transform.rotation = (Quaternion(angularIncrement * Vector3(0.5)).exp() * transform.rotation).normalized();
+    updateWorldInertiaTensor();
+}
+
+void Molecule::applyMovementAtRelativePoint(Scalar movement, const Vector3 &relativePoint, const Vector3 &normalDirection)
+{
+    auto linearMovement = movement * inverseTotalMass;
+
+    // TODO: Compute the angular movement.
+
+    printf("Linear movement %f\n", linearMovement);
+    translateByAndRotateBy(normalDirection*linearMovement, Vector3::Zeros());
+}
+
+void Molecule::applyImpulse(const Vector3 &impulse)
+{
+}
+
+void Molecule::applyImpulseInRelativePosition(const Vector3 &impulse, const Vector3 &relativePoint)
+{
+}
+
+
 void Simulation::resetNetForces()
 {
     // Update the molecules themselves.
@@ -329,7 +355,28 @@ void ContactPoint::computeNormalAndPenetrationDistance()
 
     normal = deltaVector.normalized();
     penetrationDistance = totalRadius - deltaVector.length();
+    firstRelativePoint = -normal*firstAtom.radius;
+    secondRelativePoint = normal*secondAtom.radius;
+
     //printf("Normal %f %f %f - distance %f totalRadius %f\n", normal.x, normal.y, normal.z, penetrationDistance, totalRadius);
+    printf("First point: %f %f %f\n", firstRelativePoint.x, firstRelativePoint.y, firstRelativePoint.z);
+    printf("Second point: %f %f %f\n", secondRelativePoint.x, secondRelativePoint.y, secondRelativePoint.z);
+}
+
+Scalar ContactPoint::computeInverseInertia()
+{
+    return computeInverseLinearInertia() + computeInverseAngularInertia();
+}
+
+Scalar ContactPoint::computeInverseLinearInertia()
+{
+    return firstMolecule->inverseTotalMass + secondMolecule->inverseTotalMass;
+}
+
+Scalar ContactPoint::computeInverseAngularInertia()
+{
+    // TODO: Implement this.
+    return 0;
 }
 
 inline void Simulation::emitContactPoint(const MoleculePtr &firstMolecule, const MoleculePtr &secondMolecule, size_t firstAtomIndex, size_t secondAtomIndex)
@@ -366,6 +413,20 @@ void Simulation::resolveContactCollisionResponse(ContactPoint &contact)
 
 void Simulation::resolveContactConstraint(ContactPoint &contact, Scalar relaxationFactor)
 {
+    contact.computeNormalAndPenetrationDistance();
+    if(contact.penetrationDistance <= 0)
+        return;
+
+    auto inverseInertia = contact.computeInverseInertia();
+    if(inverseInertia <= 0)
+        return;
+
+    auto penetrationDelta = contact.penetrationDistance*relaxationFactor/inverseInertia;
+
+    printf("N: %f %f %f D: %f\n", contact.normal.x, contact.normal.y, contact.normal.z, contact.penetrationDistance);
+
+    contact.firstMolecule->applyMovementAtRelativePoint(penetrationDelta, contact.firstRelativePoint, contact.normal);
+    contact.secondMolecule->applyMovementAtRelativePoint(penetrationDelta, contact.secondRelativePoint, -contact.normal);
 }
 
 
