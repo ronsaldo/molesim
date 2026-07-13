@@ -54,6 +54,8 @@ struct ContactPoint
     Scalar computeInverseInertia();
     Scalar computeInverseLinearInertia();
     Scalar computeInverseAngularInertia();
+    
+    Matrix3x3 computeContactSpaceMatrix() const;
 };
 
 struct Molecule
@@ -73,6 +75,9 @@ struct Molecule
     float totalMass = 0.0f;
     float inverseTotalMass = 0.0;
     Scalar angularMovementLimit = 0.2f;
+    Scalar restitutionCoefficient = 0.2f;
+	Scalar dynamicFrictionCoefficient = 0.5f;
+	Scalar staticFrictionCoefficient = 0.6f;
 
     Matrix3x3 inertiaTensor;
     Matrix3x3 inverseInertiaTensor;
@@ -105,6 +110,10 @@ struct Molecule
     void updateWorldInertiaTensor();
     void prepareForSimulation();
 
+    Scalar computeAngularInertiaForRelativeContactPoint(const Vector3 &relativePoint, const Vector3 &normal) const;
+    Matrix3x3 computeVelocityPerImpulseWorldMatrixForRelativeContactPoint(const Vector3 &relativePoint) const;
+    Vector3 computeVelocityAtRelativePoint(const Vector3 &relativePoint);
+
     void createFirstTestMolecule();
     void createSecondTestMolecule();
 };
@@ -113,6 +122,8 @@ struct Simulation
 {
     std::vector<MoleculePtr> molecules;
     std::vector<ContactPoint> contactPoints;
+
+    Scalar restingContactVelocityLimit = 0.1f;
 
     void resetNetForces();
     void evaluateForceGenerators(float deltaTime);

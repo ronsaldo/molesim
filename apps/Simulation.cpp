@@ -144,6 +144,26 @@ void Molecule::prepareForSimulation()
     computeInertiaTensor();
 }
 
+Scalar Molecule::computeAngularInertiaForRelativeContactPoint(const Vector3 &relativePoint, const Vector3 &normal) const
+{
+    auto torquePerUnitImpulse = relativePoint.cross(normal);
+	auto rotationPerUnitImpulse = worldInverseInertiaTensor * torquePerUnitImpulse;
+	return (rotationPerUnitImpulse.cross(relativePoint)).dot(normal);
+}
+
+Matrix3x3 Molecule::computeVelocityPerImpulseWorldMatrixForRelativeContactPoint(const Vector3 &relativePoint) const
+{
+    auto relativePointCrossMatrix = Matrix3x3::SkewSymmetric(relativePoint);
+    auto torquePerUnitImpulse = relativePointCrossMatrix;
+    auto rotationPerUnitImpulse = worldInverseInertiaTensor * torquePerUnitImpulse;
+    return -(relativePointCrossMatrix * rotationPerUnitImpulse);
+}
+
+Vector3 Molecule::computeVelocityAtRelativePoint(const Vector3 &relativePoint)
+{
+    return linearVelocity + angularVelocity.cross(relativePoint);
+}
+
 void Molecule::createFirstTestMolecule()
 {
     {
@@ -274,10 +294,13 @@ void Molecule::applyMovementAtRelativePoint(Scalar movement, const Vector3 &rela
 
 void Molecule::applyImpulse(const Vector3 &impulse)
 {
+    linearVelocity += impulse*Vector3(inverseTotalMass);
 }
 
 void Molecule::applyImpulseInRelativePosition(const Vector3 &impulse, const Vector3 &relativePoint)
 {
+    linearVelocity += impulse*Vector3(inverseTotalMass);
+	angularVelocity += worldInverseInertiaTensor * (relativePoint.cross(impulse));
 }
 
 
@@ -395,8 +418,21 @@ Scalar ContactPoint::computeInverseLinearInertia()
 
 Scalar ContactPoint::computeInverseAngularInertia()
 {
-    // TODO: Implement this.
-    return 0;
+    return firstMolecule->computeAngularInertiaForRelativeContactPoint(firstRelativePoint, normal)
+        + secondMolecule->computeAngularInertiaForRelativeContactPoint(secondRelativePoint, -normal);
+}
+
+Matrix3x3 ContactPoint::computeContactSpaceMatrix() const
+{
+    auto x = normal;
+    auto y = Vector3(1, 0, 0);
+    if(abs(normal.x) > abs(normal.y))
+        y = Vector3(0, 1, 0);
+
+    auto z = x.cross(y).normalized();
+    y = z.cross(x).normalized();
+    
+    return Matrix3x3::WithColumns(x, y, z);
 }
 
 inline void Simulation::emitContactPoint(const MoleculePtr &firstMolecule, const MoleculePtr &secondMolecule, size_t firstAtomIndex, size_t secondAtomIndex)
@@ -429,6 +465,94 @@ void Simulation::resolveContactManifoldsCollisionsAndConstraints()
 
 void Simulation::resolveContactCollisionResponse(ContactPoint &contact)
 {
+    contact.computeNormalAndPenetrationDistance();
+
+	// See Milling. 'Game Physics Engine Development'. Chapter 14 for details on these equations and the associated algorithms.	
+	auto firstCollisionObject = contact.firstMolecule;
+	auto secondCollisionObject = contact.secondMolecule;
+	
+	auto contactNormal = contact.normal;
+
+	auto relativeFirstPoint = contact.firstRelativePoint;
+	auto relativeSecondPoint = contact.secondRelativePoint;
+
+	auto contactLocalToWorldMatrix3x3 = contact.computeContactSpaceMatrix();
+
+    auto velocityChangePerImpulseWorldMatrix = 
+        firstCollisionObject->computeVelocityPerImpulseWorldMatrixForRelativeContactPoint(relativeFirstPoint) +
+        secondCollisionObject->computeVelocityPerImpulseWorldMatrixForRelativeContactPoint(relativeSecondPoint);
+	
+	auto velocityChangePerImpulseContactMatrix = contactLocalToWorldMatrix3x3.transposed() * velocityChangePerImpulseWorldMatrix * contactLocalToWorldMatrix3x3;
+
+    auto inverseMass = firstCollisionObject->inverseTotalMass + secondCollisionObject->inverseTotalMass;
+	velocityChangePerImpulseContactMatrix = velocityChangePerImpulseContactMatrix + Matrix3x3(inverseMass);
+	
+    //printf("velocityChangePerImpulseContactMatrix.determinant() %f\n", velocityChangePerImpulseContactMatrix.determinant());
+    if (velocityChangePerImpulseContactMatrix.determinant() == 0)
+    {
+        return;
+    }
+
+	auto impulseChangePerVelocityContactMatrix = velocityChangePerImpulseContactMatrix.inverse();
+
+    auto firstContactVelocity = firstCollisionObject->computeVelocityAtRelativePoint(relativeFirstPoint);
+	auto secondContactVelocity = secondCollisionObject->computeVelocityAtRelativePoint(relativeSecondPoint);
+	
+    auto relativeSeparationVelocity = firstContactVelocity - secondContactVelocity;
+	
+    auto relativeContactSeparationVelocity = relativeSeparationVelocity * contactLocalToWorldMatrix3x3;
+    //printf("relativeContactSeparationVelocity.x %f\n", relativeContactSeparationVelocity.x);
+	if(relativeContactSeparationVelocity.x > 0)
+    {
+        return;
+    }
+
+	auto relativeVelocityFromIntegrationDelta = firstCollisionObject->linearVelocityIntegrationDelta - secondCollisionObject->linearVelocityIntegrationDelta;
+	auto relativeContactVelocityFromIntegrationDelta = relativeVelocityFromIntegrationDelta.dot(contactNormal);
+	
+	auto restitutionCoefficient = sqrt(firstCollisionObject->restitutionCoefficient * secondCollisionObject->restitutionCoefficient);
+	
+	// Resting contact: reduce contact velocity by acceleration only speed increase, and set the restitution coefficient to 0.
+	if(abs(relativeContactSeparationVelocity.x) < restingContactVelocityLimit)
+    { 
+		restitutionCoefficient = 0;
+    }
+
+	auto deltaVelocity = -relativeContactSeparationVelocity.x - (restitutionCoefficient * (relativeContactSeparationVelocity.x - relativeContactVelocityFromIntegrationDelta));
+	
+	auto contactLocalVelocityChange = Vector3(
+        deltaVelocity,
+		-relativeContactSeparationVelocity.y,
+		-relativeContactSeparationVelocity.z
+    );
+		
+	auto contactLocalImpulse = impulseChangePerVelocityContactMatrix * contactLocalVelocityChange;
+
+	// Compute the planar length for simulating friction.
+	auto staticFrictionCoefficient = std::min(firstCollisionObject->staticFrictionCoefficient, secondCollisionObject->staticFrictionCoefficient);
+	auto planarImpulse = sqrt(contactLocalImpulse.y*contactLocalImpulse.y + contactLocalImpulse.z*contactLocalImpulse.z);
+
+	// Is this in the limits for the static friction?
+	if(planarImpulse > contactLocalImpulse.x * staticFrictionCoefficient)
+    {
+        auto dynamicFrictionCoefficient = std::min(firstCollisionObject->dynamicFrictionCoefficient, secondCollisionObject->dynamicFrictionCoefficient);
+		contactLocalImpulse.y /= planarImpulse;
+		contactLocalImpulse.z /= planarImpulse;
+
+		//contactLocalImpulse yz length = dynamicFrictionCoefficient * contactLocalImpulse x
+		
+		// CHECK ME: What is the meaning of this correction? [From Millington Game Physics Engine Development, Chapter 15 pp 410]
+		//auto frictionNormalDelta = velocityChangePerImpulseContactMatrix.firstRow().dot(Math::Vector3(1, dynamicFrictionCoefficient*contactLocalImpulse.y, dynamicFrictionCoefficient*contactLocalImpulse.z));
+        //contactLocalImpulse.x = deltaVelocity / frictionNormalDelta;
+
+		contactLocalImpulse.y *= dynamicFrictionCoefficient * contactLocalImpulse.x;
+		contactLocalImpulse.z *= dynamicFrictionCoefficient * contactLocalImpulse.x;
+	}
+
+	auto contactImpulse = contactLocalToWorldMatrix3x3 * contactLocalImpulse;
+
+    firstCollisionObject->applyImpulseInRelativePosition(contactImpulse, relativeFirstPoint);
+    secondCollisionObject->applyImpulseInRelativePosition(-contactImpulse, relativeSecondPoint);
 }
 
 void Simulation::resolveContactConstraint(ContactPoint &contact, Scalar relaxationFactor)
