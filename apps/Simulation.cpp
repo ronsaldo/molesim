@@ -388,7 +388,7 @@ void Simulation::computeNaivePairNarrowPhase(const MoleculePtr &firstMolecule, c
 void ContactPoint::computeNormalAndPenetrationDistance()
 {
     auto &firstAtom = firstMolecule->atomStates[firstAtomIndex];
-    auto &secondAtom = firstMolecule->atomStates[secondAtomIndex];
+    auto &secondAtom = secondMolecule->atomStates[secondAtomIndex];
 
     auto firstAtomWorldPosition = firstMolecule->transform.transformPosition(firstAtom.position);
     auto secondAtomWorldPosition = secondMolecule->transform.transformPosition(secondMolecule->atomStates[secondAtomIndex].position);
@@ -398,8 +398,8 @@ void ContactPoint::computeNormalAndPenetrationDistance()
 
     normal = deltaVector.normalized();
     penetrationDistance = totalRadius - deltaVector.length();
-    firstRelativePoint = -normal*firstAtom.radius;
-    secondRelativePoint = normal*secondAtom.radius;
+    firstRelativePoint = firstAtomWorldPosition - normal*firstAtom.radius - firstMolecule->transform.translation;
+    secondRelativePoint = secondAtomWorldPosition + normal*secondAtom.radius - secondMolecule->transform.translation;
 
     //printf("N %f %f %f - D %f R %f\n", normal.x, normal.y, normal.z, penetrationDistance, totalRadius);
     //printf("First point: %f %f %f\n", firstRelativePoint.x, firstRelativePoint.y, firstRelativePoint.z);
