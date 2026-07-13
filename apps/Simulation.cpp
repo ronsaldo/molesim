@@ -311,7 +311,7 @@ void Simulation::computeNarrowPhase(const std::vector<std::pair<MoleculePtr, Mol
     contactPoints.clear();
     for(auto &pair: broadphasePairs)
         computePairNarrowPhase(pair.first, pair.second);
-    printf("Contact points: %zu\n", contactPoints.size());
+    //printf("Contact points: %zu\n", contactPoints.size());
 }
 
 void Simulation::computePairNarrowPhase(const MoleculePtr &firstMolecule, const MoleculePtr &secondMolecule)
@@ -333,7 +333,7 @@ void Simulation::computeNaivePairNarrowPhase(const MoleculePtr &firstMolecule, c
             auto deltaVector = firstAtomWorldPosition - secondAtomWorldPosition;
             auto deltaLength2 = deltaVector.length2();
             auto totalRadius = firstAtom.radius + secondAtom.radius;
-            if(deltaLength2 <= totalRadius*totalRadius)
+            if(deltaLength2 < totalRadius*totalRadius)
             {
                 emitContactPoint(firstMolecule, secondMolecule, i, j);
             }
@@ -358,7 +358,7 @@ void ContactPoint::computeNormalAndPenetrationDistance()
     firstRelativePoint = -normal*firstAtom.radius;
     secondRelativePoint = normal*secondAtom.radius;
 
-    //printf("Normal %f %f %f - distance %f totalRadius %f\n", normal.x, normal.y, normal.z, penetrationDistance, totalRadius);
+    printf("N %f %f %f - D %f R %f\n", normal.x, normal.y, normal.z, penetrationDistance, totalRadius);
     printf("First point: %f %f %f\n", firstRelativePoint.x, firstRelativePoint.y, firstRelativePoint.z);
     printf("Second point: %f %f %f\n", secondRelativePoint.x, secondRelativePoint.y, secondRelativePoint.z);
 }
@@ -423,7 +423,7 @@ void Simulation::resolveContactConstraint(ContactPoint &contact, Scalar relaxati
 
     auto penetrationDelta = contact.penetrationDistance*relaxationFactor/inverseInertia;
 
-    printf("N: %f %f %f D: %f\n", contact.normal.x, contact.normal.y, contact.normal.z, contact.penetrationDistance);
+    //printf("N: %f %f %f D: %f\n", contact.normal.x, contact.normal.y, contact.normal.z, contact.penetrationDistance);
 
     contact.firstMolecule->applyMovementAtRelativePoint(penetrationDelta, contact.firstRelativePoint, contact.normal);
     contact.secondMolecule->applyMovementAtRelativePoint(penetrationDelta, contact.secondRelativePoint, -contact.normal);
