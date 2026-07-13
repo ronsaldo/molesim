@@ -10,6 +10,7 @@
 #include "Quaternion.hpp"
 #include "RigidTransform.hpp"
 #include "AABox.hpp"
+#include "BVH.hpp"
 #include "Sphere.hpp"
 #include "AGPU/agpu.hpp"
 
