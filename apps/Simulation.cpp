@@ -248,7 +248,7 @@ void Molecule::applyMovementAtRelativePoint(Scalar movement, const Vector3 &rela
 
     // TODO: Compute the angular movement.
 
-    printf("Linear movement %f\n", linearMovement);
+    //printf("Linear movement %f\n", linearMovement);
     translateByAndRotateBy(normalDirection*linearMovement, Vector3::Zeros());
 }
 
@@ -358,9 +358,9 @@ void ContactPoint::computeNormalAndPenetrationDistance()
     firstRelativePoint = -normal*firstAtom.radius;
     secondRelativePoint = normal*secondAtom.radius;
 
-    printf("N %f %f %f - D %f R %f\n", normal.x, normal.y, normal.z, penetrationDistance, totalRadius);
-    printf("First point: %f %f %f\n", firstRelativePoint.x, firstRelativePoint.y, firstRelativePoint.z);
-    printf("Second point: %f %f %f\n", secondRelativePoint.x, secondRelativePoint.y, secondRelativePoint.z);
+    //printf("N %f %f %f - D %f R %f\n", normal.x, normal.y, normal.z, penetrationDistance, totalRadius);
+    //printf("First point: %f %f %f\n", firstRelativePoint.x, firstRelativePoint.y, firstRelativePoint.z);
+    //printf("Second point: %f %f %f\n", secondRelativePoint.x, secondRelativePoint.y, secondRelativePoint.z);
 }
 
 Scalar ContactPoint::computeInverseInertia()
