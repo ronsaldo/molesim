@@ -137,11 +137,33 @@ void Molecule::updateWorldInertiaTensor()
 	worldInverseInertiaTensor = rotationMatrix * inverseInertiaTensor * transposedRotationMatrix;
 }
 
+void Molecule::computeBVH()
+{
+    std::vector<MoleculeBVH::NodePtrType> bvhLeaves;
+    bvhLeaves.reserve(atomStates.size());
+
+    for(size_t i = 0; i < atomStates.size(); ++i)
+    {
+        auto center = atomStates[i].position;
+        auto radius = atomStates[i].radius;
+        auto volume = AABox::ForSphere(center, radius);
+
+        auto leaf = std::make_shared<MoleculeBVH::NodeType> ();
+        leaf->isLeaf = true;
+        leaf->volume = volume;
+        leaf->payload = i;
+        bvhLeaves.push_back(leaf);
+    }
+
+    bvh.buildBottomUp(bvhLeaves);
+}
+
 void Molecule::prepareForSimulation()
 {
     translateToCenterOfMass();
     computeBoundingBox();
     computeInertiaTensor();
+    computeBVH();
 }
 
 Scalar Molecule::computeAngularInertiaForRelativeContactPoint(const Vector3 &relativePoint, const Vector3 &normal) const
@@ -359,7 +381,10 @@ void Simulation::computeNarrowPhase(const std::vector<std::pair<MoleculePtr, Mol
 
 void Simulation::computePairNarrowPhase(const MoleculePtr &firstMolecule, const MoleculePtr &secondMolecule)
 {
-    computeNaivePairNarrowPhase(firstMolecule, secondMolecule);
+    if(useNaiveNarrowphase)
+        computeNaivePairNarrowPhase(firstMolecule, secondMolecule);
+    else
+        computeBVHPairNarrowPhase(firstMolecule, secondMolecule);
 }
 
 void Simulation::computeNaivePairNarrowPhase(const MoleculePtr &firstMolecule, const MoleculePtr &secondMolecule)
@@ -377,11 +402,32 @@ void Simulation::computeNaivePairNarrowPhase(const MoleculePtr &firstMolecule, c
             auto deltaLength2 = deltaVector.length2();
             auto totalRadius = firstAtom.radius + secondAtom.radius;
             if(deltaLength2 < totalRadius*totalRadius)
-            {
                 emitContactPoint(firstMolecule, secondMolecule, i, j);
-            }
         }
     }
+}
+
+void Simulation::computeBVHPairNarrowPhase(const MoleculePtr &firstMolecule, const MoleculePtr &secondMolecule)
+{
+    for(size_t firstAtomIndex = 0; firstAtomIndex < firstMolecule->atomStates.size(); ++firstAtomIndex)
+    {
+        auto &firstAtom = firstMolecule->atomStates[firstAtomIndex];
+        auto firstAtomWorldPosition = firstMolecule->transform.transformPosition(firstAtom.position);
+        auto firstAtomPositionInSecondMolecule = secondMolecule->transform.inverseTransformPosition(firstAtomWorldPosition);
+        auto firstAtomBoundingBoxInSecondMolecule = AABox::ForSphere(firstAtomPositionInSecondMolecule, firstAtom.radius);
+
+        secondMolecule->bvh.leavesIntersectingBoxDo(firstAtomBoundingBoxInSecondMolecule, [&](size_t secondAtomIndex){
+            auto &secondAtom = secondMolecule->atomStates[secondAtomIndex];
+            auto secondAtomWorldPosition = secondMolecule->transform.transformPosition(secondAtom.position);
+
+            auto deltaVector = firstAtomWorldPosition - secondAtomWorldPosition;
+            auto deltaLength2 = deltaVector.length2();
+            auto totalRadius = firstAtom.radius + secondAtom.radius;
+            if(deltaLength2 < totalRadius*totalRadius)
+                emitContactPoint(firstMolecule, secondMolecule, firstAtomIndex, secondAtomIndex);
+        });
+    }
+
 }
 
 

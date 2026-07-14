@@ -2,6 +2,7 @@
 #define MOLEVIS_SIMULATION_HPP
 
 #include <stdio.h>
+#include <stddef.h>
 #include <string.h>
 #include <string>
 #include <vector>
@@ -16,6 +17,7 @@
 
 namespace Molesim
 {
+typedef BoundingVolumeHierachy<size_t> MoleculeBVH;
 typedef std::shared_ptr<struct Molecule> MoleculePtr;
 typedef std::shared_ptr<struct Simulation> SimulationPtr;
 
@@ -91,6 +93,8 @@ struct Molecule
     std::vector<AtomRenderingState> atomStates;
     std::vector<std::pair<size_t, size_t>> bonds;
 
+    MoleculeBVH bvh;
+
     agpu_buffer_ref modelStateBuffer;
     agpu_buffer_ref moleculeRenderingStateBuffer;
     agpu_shader_resource_binding_ref moleculeResourceBinding;
@@ -109,6 +113,7 @@ struct Molecule
     void computeBoundingBox();
     void computeInertiaTensor();
     void updateWorldInertiaTensor();
+    void computeBVH();
     void prepareForSimulation();
 
     Scalar computeAngularInertiaForRelativeContactPoint(const Vector3 &relativePoint, const Vector3 &normal) const;
@@ -125,6 +130,7 @@ struct Simulation
     std::vector<ContactPoint> contactPoints;
 
     Scalar restingContactVelocityLimit = 0.1f;
+    bool useNaiveNarrowphase = false;
 
     void resetNetForces();
     void evaluateForceGenerators(float deltaTime);
@@ -134,6 +140,7 @@ struct Simulation
     void computeNarrowPhase(const std::vector<std::pair<MoleculePtr, MoleculePtr>> &broadphasePairs);
     void computePairNarrowPhase(const MoleculePtr &firstMolecule, const MoleculePtr &secondMolecule);
     void computeNaivePairNarrowPhase(const MoleculePtr &firstMolecule, const MoleculePtr &secondMolecule);
+    void computeBVHPairNarrowPhase(const MoleculePtr &firstMolecule, const MoleculePtr &secondMolecule);
     void emitContactPoint(const MoleculePtr &firstMolecule, const MoleculePtr &secondMolecule, size_t firstAtomIndex, size_t secondAtomIndex);
 
     void resolveContactManifoldsCollisionsAndConstraints();
