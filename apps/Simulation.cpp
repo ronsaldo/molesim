@@ -18,7 +18,7 @@ void initializeAtomColorConventions()
 }
 
 // Reference: http://chemyang.ccnu.edu.cn/ccb/server/AIMMS/mol2.pdf, p. 53
-// Code taken from UDock2
+// Code taken from UDock2 [http://udock.fr/]
 std::string sybyl_toString( Sybyl type )
 {
     switch ( type )
@@ -46,7 +46,7 @@ std::string sybyl_toString( Sybyl type )
     return "";
 }
 
-// Code taken from UDock2
+// Code taken from UDock2 [http://udock.fr/]
 Sybyl sybyl_fromString( const std::string &type )
 {
     if ( type == "C.3" )
@@ -87,7 +87,7 @@ Sybyl sybyl_fromString( const std::string &type )
     return Sybyl::Hydrogen;
 }
 
-// Code taken from UDock2
+// Code taken from UDock2 [http://udock.fr/]
 float sybyl_getRadius( Sybyl type )
 {
     switch ( type )
@@ -119,7 +119,7 @@ float sybyl_getRadius( Sybyl type )
 // T., Caldwell, J. W., & Kollman, P. A. (1995). A Second Generation Force Field for the Simulation of Proteins,
 // Nucleic Acids, and Organic Molecules. In Journal of the American Chemical Society (Vol. 117, Issue 19, pp.
 // 5179�5197). American Chemical Society (ACS). https://doi.org/10.1021/ja00124a002
-// Code taken from UDock2
+// Code taken from UDock2 [http://udock.fr/]
 float sybyl_getEpsilon( Sybyl type )
 {
     switch ( type )
