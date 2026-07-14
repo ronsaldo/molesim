@@ -17,6 +17,137 @@ void initializeAtomColorConventions()
     atomTypeColorMap["O"] = Vector4(0.8f, 0.1f, 0.1f, 1.0f);
 }
 
+// Reference: http://chemyang.ccnu.edu.cn/ccb/server/AIMMS/mol2.pdf, p. 53
+// Code taken from UDock2
+std::string sybyl_toString( Sybyl type )
+{
+    switch ( type )
+    {
+    case Sybyl::CarbonSp3: return "C.3";
+    case Sybyl::CarbonSp2: return "C.2";
+    case Sybyl::CarbonAromatic: return "C.ar";
+    case Sybyl::Carbocation: return "C.cat";
+    case Sybyl::NitrogenSp3: return "N.3";
+    case Sybyl::NitrogenSp2: return "N.2";
+    case Sybyl::NitrogenSp3PositivelyCharged: return "N.4";
+    case Sybyl::NitrogenAromatic: return "N.ar";
+    case Sybyl::NitrogenAmide: return "N.am";
+    case Sybyl::NitrogenTrigonalPlanar: return "N.pl3";
+    case Sybyl::OxygenSp3: return "O.3";
+    case Sybyl::OxygenSp2: return "O.2";
+    case Sybyl::OxygenInCarboxylatesAndPhosphates: return "O.co2";
+    case Sybyl::SulphurSp3: return "S.3";
+    case Sybyl::PhosphorusSp3: return "P.3";
+    case Sybyl::Fluorine: return "F";
+    case Sybyl::Hydrogen: return "H";
+    case Sybyl::Lithium: return "Li";
+    }
+
+    return "";
+}
+
+// Code taken from UDock2
+Sybyl sybyl_fromString( const std::string &type )
+{
+    if ( type == "C.3" )
+        return Sybyl::CarbonSp3;
+    if ( type == "C.2" )
+        return Sybyl::CarbonSp2;
+    if ( type == "C.ar" )
+        return Sybyl::CarbonAromatic;
+    if ( type == "C.cat" )
+        return Sybyl::Carbocation;
+    if ( type == "N.3" )
+        return Sybyl::NitrogenSp3;
+    if ( type == "N.2" )
+        return Sybyl::NitrogenSp2;
+    if ( type == "N.4" )
+        return Sybyl::NitrogenSp3PositivelyCharged;
+    if ( type == "N.ar" )
+        return Sybyl::NitrogenAromatic;
+    if ( type == "N.am" )
+        return Sybyl::NitrogenAmide;
+    if ( type == "N.pl3" )
+        return Sybyl::NitrogenTrigonalPlanar;
+    if ( type == "O.3" )
+        return Sybyl::OxygenSp3;
+    if ( type == "O.2" )
+        return Sybyl::OxygenSp2;
+    if ( type == "O.co2" )
+        return Sybyl::OxygenInCarboxylatesAndPhosphates;
+    if ( type == "S.3" )
+        return Sybyl::SulphurSp3;
+    if ( type == "F" )
+        return Sybyl::Fluorine;
+    if ( type == "H" )
+        return Sybyl::Hydrogen;
+    if ( type == "Li" )
+        return Sybyl::Lithium;
+
+    return Sybyl::Hydrogen;
+}
+
+// Code taken from UDock2
+float sybyl_getRadius( Sybyl type )
+{
+    switch ( type )
+    {
+    case Sybyl::CarbonSp3: return 1.908f;
+    case Sybyl::CarbonSp2: return 1.908f;
+    case Sybyl::CarbonAromatic: return 1.908f;
+    case Sybyl::Carbocation: return 1.908f;
+    case Sybyl::NitrogenSp3: return 1.875f;
+    case Sybyl::NitrogenSp2: return 1.874f;
+    case Sybyl::NitrogenSp3PositivelyCharged: return 1.824f;
+    case Sybyl::NitrogenAromatic: return 1.824f;
+    case Sybyl::NitrogenAmide: return 1.824f;
+    case Sybyl::NitrogenTrigonalPlanar: return 1.824f;
+    case Sybyl::OxygenSp3: return 1.721f;
+    case Sybyl::OxygenSp2: return 1.6612f;
+    case Sybyl::OxygenInCarboxylatesAndPhosphates: return 1.6612f;
+    case Sybyl::SulphurSp3: return 2.0f;
+    case Sybyl::PhosphorusSp3: return 2.1f;
+    case Sybyl::Fluorine: return 1.75f;
+    case Sybyl::Hydrogen: return 1.4870f;
+    case Sybyl::Lithium: return 1.137f;
+    }
+
+    return 0.f;
+}
+
+// Cornell, W. D., Cieplak, P., Bayly, C. I., Gould, I. R., Merz, K. M., Ferguson, D. M., Spellmeyer, D. C., Fox,
+// T., Caldwell, J. W., & Kollman, P. A. (1995). A Second Generation Force Field for the Simulation of Proteins,
+// Nucleic Acids, and Organic Molecules. In Journal of the American Chemical Society (Vol. 117, Issue 19, pp.
+// 5179�5197). American Chemical Society (ACS). https://doi.org/10.1021/ja00124a002
+// Code taken from UDock2
+float sybyl_getEpsilon( Sybyl type )
+{
+    switch ( type )
+    {
+    case Sybyl::CarbonSp3: return 0.1094f;
+    case Sybyl::CarbonSp2: return 0.0860f;
+    case Sybyl::CarbonAromatic: return 0.0860f;
+    case Sybyl::Carbocation: return 0.0860f;
+    case Sybyl::NitrogenSp3: return 0.17f;
+    case Sybyl::NitrogenSp2: return 0.17f;
+    case Sybyl::NitrogenSp3PositivelyCharged: return 0.17f;
+    case Sybyl::NitrogenAromatic: return 0.17f;
+    case Sybyl::NitrogenAmide: return 0.17f;
+    case Sybyl::NitrogenTrigonalPlanar: return 0.17f;
+    case Sybyl::OxygenSp3: return 0.2104f;
+    case Sybyl::OxygenSp2: return 0.21f;
+    case Sybyl::OxygenInCarboxylatesAndPhosphates: return 0.21f;
+    case Sybyl::SulphurSp3: return 0.25f;
+    case Sybyl::PhosphorusSp3: return 0.2f;
+    case Sybyl::Fluorine: return 0.061f;
+    case Sybyl::Hydrogen: return 0.0157f;
+    case Sybyl::Lithium: return 0.0183f;
+    }
+
+    return 0.f;
+}
+
+
 Vector4
 getOrCreateColorForAtomType(const std::string &type)
 {
@@ -46,21 +177,26 @@ MoleculePtr loadMolecule(const std::string &filename)
 
         auto chemAtomNumber = chemAtom.atomic_number();
 
+        std::string sybylName = chemAtom.get("sybyl").value_or("").as_string();
+        auto sybylType = sybyl_fromString(sybylName);
+
         auto atomDesc = AtomDescription();
         atomDesc.charge = float(chemAtom.charge());
+        atomDesc.epsilon = sybyl_getEpsilon(sybylType);
         atomDesc.mass = chemAtom.mass();
         atomDesc.atomicNumber = chemAtomNumber ? chemAtomNumber.value() : 1;
-        molecule->atomDescriptions.push_back(atomDesc);
+
+        printf("Atom %zu charge %f eps: %f mass: %f sybyl [%s]%d\n", i, atomDesc.charge, atomDesc.epsilon, atomDesc.mass, sybylName.c_str(), int(sybylType));
 
         auto atomState = AtomRenderingState();
         atomState.position = Vector3(atomPosition[0], atomPosition[1], atomPosition[2]);
         //printf("Position: %f %f %f\n", atomPosition[0], atomPosition[1], atomPosition[2]);
         
-        auto chemRadius = chemAtom.covalent_radius();
-        atomState.radius = chemRadius ? chemRadius.value() : 0.2f;
+        atomState.radius = sybyl_getRadius(sybylType);
         atomState.color = getOrCreateColorForAtomType(chemAtom.type());
         
         molecule->atomStates.push_back(atomState);
+        molecule->atomDescriptions.push_back(atomDesc);
     }
 
     auto &topology = frame.topology();

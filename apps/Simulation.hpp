@@ -21,6 +21,36 @@ typedef BoundingVolumeHierachy<size_t> MoleculeBVH;
 typedef std::shared_ptr<struct Molecule> MoleculePtr;
 typedef std::shared_ptr<struct Simulation> SimulationPtr;
 
+/**
+ * Sybyl enum taken from UDock2
+ */
+enum class Sybyl
+{
+    CarbonSp3,                         // (C.3)
+    CarbonSp2,                         // (C.2)
+    CarbonAromatic,                    // (C.ar)
+    Carbocation,                       // (guanadinium) (C.cat)
+    NitrogenSp3,                       // (N.3)
+    NitrogenSp2,                       // (N.2)
+    NitrogenSp3PositivelyCharged,      // (N.4)
+    NitrogenAromatic,                  // (N.ar)
+    NitrogenAmide,                     // (N.am)
+    NitrogenTrigonalPlanar,            // (N.pl3)
+    OxygenSp3,                         // (O.3)
+    OxygenSp2,                         // (O.2)
+    OxygenInCarboxylatesAndPhosphates, // (O.co2)
+    SulphurSp3,                        // (S.3)
+    PhosphorusSp3,                     // (P.3)
+    Fluorine,                          // (F)
+    Hydrogen,                          // (H)
+    Lithium                            // (Li)
+};
+
+std::string sybyl_toString(Sybyl type);
+Sybyl sybyl_fromString( const std::string &type);
+float sybyl_getRadius( Sybyl type );
+float sybyl_getEpsilon( Sybyl type );
+
 struct AtomRenderingState
 {
     Vector3 position;
@@ -30,8 +60,10 @@ struct AtomRenderingState
 
 struct AtomDescription
 {
-    float charge;
-    float mass;
+    float charge = 0;
+    float mass = 0;
+    float epsilon = 0;
+    Sybyl sybyl;
     uint32_t atomicNumber;
 };
 
