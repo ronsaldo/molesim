@@ -43,6 +43,7 @@ public:
         bool debugLayerEnabled = false;
         agpu_uint platformIndex = 0;
         agpu_uint gpuIndex = 0;
+        bool useNaiveCollisionDetection = false;
 
         for(int i = 1; i < argc; ++i)
         {
@@ -75,6 +76,10 @@ public:
                 {
                     gpuIndex = atoi(argv[++argc]);
                 }
+                else if(!strcmp(arg, "-naive-collisions"))
+                {
+                    useNaiveCollisionDetection = true;
+                }
                 else
                 {
                     printHelp();
@@ -90,6 +95,7 @@ public:
 
         // Load the molecules
         simulation = std::make_shared<Simulation> ();
+        simulation->useNaiveNarrowphase = useNaiveCollisionDetection;
         initializeAtomColorConventions();
         for(auto &fileName : moleculeFileNames)
         {
