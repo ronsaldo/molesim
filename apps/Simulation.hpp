@@ -184,6 +184,7 @@ struct Simulation
     void computeTotalEnergy(const std::vector<std::pair<MoleculePtr, MoleculePtr>> &broadphasePairs);
     Scalar computePairEnergy(const MoleculePtr &firstMolecule, const MoleculePtr &secondMolecule);
     Scalar computeNaivePairEnergy(const MoleculePtr &firstMolecule, const MoleculePtr &secondMolecule);
+    Scalar computeBVHPairEnergy(const MoleculePtr &firstMolecule, const MoleculePtr &secondMolecule);
 
     void resolveContactManifoldsCollisionsAndConstraints();
     void resolveContactCollisionResponse(ContactPoint &contact);

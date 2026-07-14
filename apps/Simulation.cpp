@@ -223,7 +223,7 @@ MoleculePtr loadMolecule(const std::string &filename)
         atomDesc.mass = chemAtom.mass();
         atomDesc.atomicNumber = chemAtomNumber ? chemAtomNumber.value() : 1;
 
-        printf("Atom %zu charge %f eps: %f mass: %f sybyl [%s]%d\n", i, atomDesc.charge, atomDesc.epsilon, atomDesc.mass, sybylName.c_str(), int(sybylType));
+        //printf("Atom %zu charge %f eps: %f mass: %f sybyl [%s]%d\n", i, atomDesc.charge, atomDesc.epsilon, atomDesc.mass, sybylName.c_str(), int(sybylType));
 
         auto atomState = AtomRenderingState();
         atomState.position = Vector3(atomPosition[0], atomPosition[1], atomPosition[2]);
@@ -619,7 +619,10 @@ void Simulation::computeTotalEnergy(const std::vector<std::pair<MoleculePtr, Mol
 
 Scalar Simulation::computePairEnergy(const MoleculePtr &firstMolecule, const MoleculePtr &secondMolecule)
 {
-    return computeNaivePairEnergy(firstMolecule, secondMolecule);
+    if(useNaiveNarrowphase)
+        return computeNaivePairEnergy(firstMolecule, secondMolecule);
+    else
+        return computeBVHPairEnergy(firstMolecule, secondMolecule);
 }
 
 Scalar Simulation::computeNaivePairEnergy(const MoleculePtr &firstMolecule, const MoleculePtr &secondMolecule)
@@ -638,7 +641,7 @@ Scalar Simulation::computeNaivePairEnergy(const MoleculePtr &firstMolecule, cons
 
             auto deltaVector = firstAtomWorldPosition - secondAtomWorldPosition;
             auto deltaLength2 = deltaVector.length2();
-            if(deltaLength2 > energyMaxRadiusDefault)
+            if(deltaLength2 > energyMaxRadiusDefault*energyMaxRadiusDefault)
                 continue;
 
             energy += lennardJonesCoulombic(
@@ -650,6 +653,35 @@ Scalar Simulation::computeNaivePairEnergy(const MoleculePtr &firstMolecule, cons
     return energy;
 }
 
+Scalar Simulation::computeBVHPairEnergy(const MoleculePtr &firstMolecule, const MoleculePtr &secondMolecule)
+{
+    Scalar energy = 0;
+    for(size_t firstAtomIndex = 0; firstAtomIndex < firstMolecule->atomStates.size(); ++firstAtomIndex)
+    {
+        auto &firstAtom = firstMolecule->atomStates[firstAtomIndex];
+        auto &firstAtomDesc = firstMolecule->atomDescriptions[firstAtomIndex];
+        auto firstAtomWorldPosition = firstMolecule->transform.transformPosition(firstAtom.position);
+        auto firstAtomPositionInSecondMolecule = secondMolecule->transform.inverseTransformPosition(firstAtomWorldPosition);
+        auto firstAtomBoundingBoxInSecondMolecule = AABox::ForSphere(firstAtomPositionInSecondMolecule, firstAtom.radius + energyMaxRadiusDefault);
+
+        secondMolecule->bvh.leavesIntersectingBoxDo(firstAtomBoundingBoxInSecondMolecule, [&](size_t secondAtomIndex){
+            auto &secondAtom = secondMolecule->atomStates[secondAtomIndex];
+            auto &secondAtomDesc = secondMolecule->atomDescriptions[secondAtomIndex];
+            auto secondAtomWorldPosition = secondMolecule->transform.transformPosition(secondAtom.position);
+
+            auto deltaVector = firstAtomWorldPosition - secondAtomWorldPosition;
+            auto deltaLength2 = deltaVector.length2();
+            if(deltaLength2 > energyMaxRadiusDefault*energyMaxRadiusDefault)
+                return;
+
+            energy += lennardJonesCoulombic(
+                    firstAtomWorldPosition, firstAtom.radius, firstAtomDesc.epsilon, firstAtomDesc.charge,
+                    secondAtomWorldPosition, secondAtom.radius, secondAtomDesc.epsilon, secondAtomDesc.charge);
+        });
+    }
+
+    return energy;
+}
 
 void ContactPoint::computeNormalAndPenetrationDistance()
 {
