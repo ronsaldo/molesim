@@ -160,20 +160,30 @@ struct Simulation
 {
     std::vector<MoleculePtr> molecules;
     std::vector<ContactPoint> contactPoints;
+    Scalar totalEnergy = 0.0;
 
     Scalar restingContactVelocityLimit = 0.1f;
     bool useNaiveNarrowphase = false;
+
+    Scalar energyMaxRadiusDefault      = 12.f;
+    Scalar optimizationStepSizeDefault = 1.f;
 
     void resetNetForces();
     void evaluateForceGenerators(float deltaTime);
     void integrateMovement(float deltaTime);
     void detectAndResolveCollisions();
     std::vector<std::pair<MoleculePtr, MoleculePtr>> computeBroadphase();
+
     void computeNarrowPhase(const std::vector<std::pair<MoleculePtr, MoleculePtr>> &broadphasePairs);
     void computePairNarrowPhase(const MoleculePtr &firstMolecule, const MoleculePtr &secondMolecule);
     void computeNaivePairNarrowPhase(const MoleculePtr &firstMolecule, const MoleculePtr &secondMolecule);
     void computeBVHPairNarrowPhase(const MoleculePtr &firstMolecule, const MoleculePtr &secondMolecule);
+
     void emitContactPoint(const MoleculePtr &firstMolecule, const MoleculePtr &secondMolecule, size_t firstAtomIndex, size_t secondAtomIndex);
+
+    void computeTotalEnergy(const std::vector<std::pair<MoleculePtr, MoleculePtr>> &broadphasePairs);
+    Scalar computePairEnergy(const MoleculePtr &firstMolecule, const MoleculePtr &secondMolecule);
+    Scalar computeNaivePairEnergy(const MoleculePtr &firstMolecule, const MoleculePtr &secondMolecule);
 
     void resolveContactManifoldsCollisionsAndConstraints();
     void resolveContactCollisionResponse(ContactPoint &contact);

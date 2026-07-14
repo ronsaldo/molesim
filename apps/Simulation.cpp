@@ -17,6 +17,43 @@ void initializeAtomColorConventions()
     atomTypeColorMap["O"] = Vector4(0.8f, 0.1f, 0.1f, 1.0f);
 }
 
+// Code taken from UDock2 [http://udock.fr/]
+Scalar lennardJonesCoulombic(const Vector3 & p1,
+                             Scalar             r1,
+                             Scalar             e1,
+                             Scalar             c1,
+                             const Vector3 & p2,
+                             Scalar             r2,
+                             Scalar             e2,
+                             Scalar             c2 )
+{
+    const float d = (p2 - p1).length();
+
+    // Avoid 0 division
+    if ( d < 1e-1f )
+        return std::numeric_limits<float>::max();
+
+    // 8-6 Lennard-Jones potential
+    // http://www.sklogwiki.org/SklogWiki/index.php/8-6_Lennard-Jones_potential
+    const Scalar rmOutD  = ( r1 + r2 ) / d;
+    Scalar       rmOutD6 = rmOutD * rmOutD * rmOutD;
+    rmOutD6             = rmOutD6 * rmOutD6;
+
+    const Scalar rmOutD8 = rmOutD6 * rmOutD * rmOutD;
+    const Scalar epsilon = sqrt( e1 * e2 );
+    const Scalar contact = 3.f * epsilon * rmOutD8 - 4.f * epsilon * rmOutD6;
+
+    // Coulombic
+    // "f is a conversion factor for converting the electrostatics term to kcal/mol. We used f = 332.0522
+    // according to the AMBER12 documentation. We used a distance dependent dielectric constant of \mathcal{E}_0 =
+    // 20 that resulted in balanced contributions of t different terms of the scoring function." Udock, the
+    // interactive docking entertainment system, Levieux et al. 2014 Reference:
+    // https://cedric.cnam.fr/fichiers/art_3149.pdf
+    const Scalar charge = ( 332.0522f / 20.f ) * ( c1 * c2 / d );
+
+    return contact + charge;
+}
+
 // Reference: http://chemyang.ccnu.edu.cn/ccb/server/AIMMS/mol2.pdf, p. 53
 // Code taken from UDock2 [http://udock.fr/]
 std::string sybyl_toString( Sybyl type )
@@ -327,6 +364,8 @@ void Molecule::createFirstTestMolecule()
     {
         AtomDescription atomDescription;
         atomDescription.mass = 1.0;
+        atomDescription.charge = 1.0;
+        atomDescription.epsilon = 1.0;
         atomDescriptions.push_back(atomDescription);
 
         AtomRenderingState atomState;
@@ -344,6 +383,8 @@ void Molecule::createSecondTestMolecule()
     {
         AtomDescription atomDescription;
         atomDescription.mass = 1.0;
+        atomDescription.charge = 1.0;
+        atomDescription.epsilon = 1.0;
         atomDescriptions.push_back(atomDescription);
 
         AtomRenderingState atomState;
@@ -486,6 +527,7 @@ void Simulation::detectAndResolveCollisions()
     auto broadphasePairs = computeBroadphase();
     computeNarrowPhase(broadphasePairs);
     resolveContactManifoldsCollisionsAndConstraints();
+    computeTotalEnergy(broadphasePairs);
 }
 
 std::vector<std::pair<MoleculePtr, MoleculePtr>> Simulation::computeBroadphase()
@@ -494,11 +536,11 @@ std::vector<std::pair<MoleculePtr, MoleculePtr>> Simulation::computeBroadphase()
     for(size_t i = 0; i < molecules.size(); ++i)
     {
         auto &firstMolecule = molecules[i];
-        auto firstBoundingBox = firstMolecule->boundingBox.transformedWith(firstMolecule->transform);
+        auto firstBoundingBox = firstMolecule->boundingBox.transformedWith(firstMolecule->transform).expandedBy(energyMaxRadiusDefault);
         for(size_t j = i + 1; j < molecules.size(); ++j)
         {
             auto &secondMolecule = molecules[j];
-            auto secondBoundingBox = secondMolecule->boundingBox.transformedWith(secondMolecule->transform);
+            auto secondBoundingBox = secondMolecule->boundingBox.transformedWith(secondMolecule->transform).expandedBy(energyMaxRadiusDefault);
             if(firstBoundingBox.hasIntersectionWithBox(secondBoundingBox))
                 broadphasePairs.push_back(std::make_pair(firstMolecule, secondMolecule));
         }
@@ -564,6 +606,48 @@ void Simulation::computeBVHPairNarrowPhase(const MoleculePtr &firstMolecule, con
         });
     }
 
+}
+
+void Simulation::computeTotalEnergy(const std::vector<std::pair<MoleculePtr, MoleculePtr>> &broadphasePairs)
+{
+    totalEnergy = 0;
+    for(auto &pair: broadphasePairs)
+        totalEnergy += computePairEnergy(pair.first, pair.second);
+
+    printf("Total energy: %f\n", totalEnergy);
+}
+
+Scalar Simulation::computePairEnergy(const MoleculePtr &firstMolecule, const MoleculePtr &secondMolecule)
+{
+    return computeNaivePairEnergy(firstMolecule, secondMolecule);
+}
+
+Scalar Simulation::computeNaivePairEnergy(const MoleculePtr &firstMolecule, const MoleculePtr &secondMolecule)
+{
+    Scalar energy = 0;
+    for(size_t i = 0; i < firstMolecule->atomStates.size(); ++i)
+    {
+        auto &firstAtom = firstMolecule->atomStates[i];
+        auto &firstAtomDesc = firstMolecule->atomDescriptions[i];
+        auto firstAtomWorldPosition = firstMolecule->transform.transformPosition(firstAtom.position);
+        for(size_t j = 0; j < secondMolecule->atomStates.size(); ++j)
+        {
+            auto &secondAtom = secondMolecule->atomStates[j];
+            auto &secondAtomDesc = secondMolecule->atomDescriptions[j];
+            auto secondAtomWorldPosition = secondMolecule->transform.transformPosition(secondAtom.position);
+
+            auto deltaVector = firstAtomWorldPosition - secondAtomWorldPosition;
+            auto deltaLength2 = deltaVector.length2();
+            if(deltaLength2 > energyMaxRadiusDefault)
+                continue;
+
+            energy += lennardJonesCoulombic(
+                    firstAtomWorldPosition, firstAtom.radius, firstAtomDesc.epsilon, firstAtomDesc.charge,
+                    secondAtomWorldPosition, secondAtom.radius, secondAtomDesc.epsilon, secondAtomDesc.charge);
+        }
+    }
+
+    return energy;
 }
 
 
