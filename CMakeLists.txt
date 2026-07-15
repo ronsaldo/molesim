@@ -65,3 +65,23 @@ set(DATA_OUTPUT_PREFIX "${MainOutputDirectory}")
 if(CMAKE_CONFIGURATION_TYPES)
     set(DATA_OUTPUT_PREFIX "${MainOutputDirectory}/$<CONFIG>")
 endif()
+
+if(NOT WIN32)
+    file(GLOB ASSET_FILES RELATIVE "${CMAKE_CURRENT_SOURCE_DIR}"
+        "assets/shaders/*.glsl"
+    )
+
+    add_custom_target(SampleData ALL)
+    foreach(asset_file ${ASSET_FILES})
+        add_custom_command(
+            TARGET SampleData
+            POST_BUILD
+            COMMAND cmake -E copy
+                "${CMAKE_CURRENT_SOURCE_DIR}/${asset_file}"
+                "${DATA_OUTPUT_PREFIX}/${asset_file}"
+            DEPENDS "${CMAKE_CURRENT_SOURCE_DIR}/${asset_file}"
+            COMMENT "Copy ${asset_file}"
+        )
+    endforeach()
+
+endif()
