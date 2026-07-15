@@ -29,7 +29,7 @@ cmake ..
 cmake --build . --config RelWithDebInfo
 ```
 
-On other platforms, you may need the following commands to get a Release build:
+On other platforms, you may need the following commands to get a RelWithDebInfo build:
 
 ```
 cmake -DCMAKE_BUILD_TYPE=RelWithDebInfo ..
