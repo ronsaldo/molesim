@@ -26,14 +26,14 @@ On Windows, you can configure and build the project with your favorite IDE or wi
 
 ```
 cmake ..
-cmake --build . --target Udock --config RelWithDebInfo
+cmake --build . --config RelWithDebInfo
 ```
 
 On other platforms, you may need the following commands to get a Release build:
 
 ```
 cmake -DCMAKE_BUILD_TYPE=RelWithDebInfo ..
-cmake --build . --target Udock
+cmake --build .
 ```
 
 After building, executable and resource folders are located in the `build/dist` folder.
