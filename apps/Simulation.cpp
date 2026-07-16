@@ -885,8 +885,15 @@ void Simulation::update(float deltaTime)
     detectAndResolveCollisions();
 }
 
+void Simulation::performOptimizationSteps()
+{
+    performOptimizationStep();
+}
+
 void Simulation::performOptimizationStep()
 {
+    Scalar energy = computeTotalEnergy();
+    printf("Energy %f\n", energy);
 }
 
 } // End of namespace Molesim

@@ -353,7 +353,7 @@ public:
             }
 
             if(isOptimizing)
-                simulation->performOptimizationStep();
+                simulation->performOptimizationSteps();
                 
             render();
         }

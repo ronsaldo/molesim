@@ -89,7 +89,7 @@ int main(int argc, const char **argv)
     {
         const auto SimulationTimeStep = 1.0f / 60.0f;
         simulation->update(SimulationTimeStep);
-        simulation->performOptimizationStep();
+        simulation->performOptimizationSteps();
     }
 
     return 0;

@@ -191,6 +191,7 @@ struct Simulation
     void resolveContactConstraint(ContactPoint &contact, Scalar relaxationFactor);
 
     void update(float deltaTime);
+    void performOptimizationSteps();
     void performOptimizationStep();
 };
 
