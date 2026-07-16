@@ -69,6 +69,7 @@ endif()
 if(NOT WIN32)
     file(GLOB ASSET_FILES RELATIVE "${CMAKE_CURRENT_SOURCE_DIR}"
         "assets/shaders/*.glsl"
+        "assets/textures/*.bmp"
     )
 
     add_custom_target(SampleData ALL)
