@@ -160,7 +160,6 @@ struct Simulation
 {
     std::vector<MoleculePtr> molecules;
     std::vector<ContactPoint> contactPoints;
-    Scalar totalEnergy = 0.0;
 
     Scalar restingContactVelocityLimit = 0.1f;
     bool useNaiveNarrowphase = false;
@@ -181,7 +180,8 @@ struct Simulation
 
     void emitContactPoint(const MoleculePtr &firstMolecule, const MoleculePtr &secondMolecule, size_t firstAtomIndex, size_t secondAtomIndex);
 
-    void computeTotalEnergy(const std::vector<std::pair<MoleculePtr, MoleculePtr>> &broadphasePairs);
+    Scalar computeTotalEnergy();
+    Scalar computeTotalEnergyWithPairs(const std::vector<std::pair<MoleculePtr, MoleculePtr>> &broadphasePairs);
     Scalar computePairEnergy(const MoleculePtr &firstMolecule, const MoleculePtr &secondMolecule);
     Scalar computeNaivePairEnergy(const MoleculePtr &firstMolecule, const MoleculePtr &secondMolecule);
     Scalar computeBVHPairEnergy(const MoleculePtr &firstMolecule, const MoleculePtr &secondMolecule);
@@ -190,8 +190,8 @@ struct Simulation
     void resolveContactCollisionResponse(ContactPoint &contact);
     void resolveContactConstraint(ContactPoint &contact, Scalar relaxationFactor);
 
-
     void update(float deltaTime);
+    void performOptimizationStep();
 };
 
 void initializeAtomColorConventions();

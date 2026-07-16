@@ -351,6 +351,9 @@ public:
                 const auto SimulationTimeStep = 1.0f / 60.0f;
                 simulation->update(SimulationTimeStep);
             }
+
+            if(isOptimizing)
+                simulation->performOptimizationStep();
                 
             render();
         }
@@ -404,6 +407,9 @@ public:
         {
         case SDLK_g:
             drawGrid = !drawGrid;
+            break;
+        case SDLK_o:
+            isOptimizing = !isOptimizing;
             break;
         case SDLK_ESCAPE:
             quitting = true;
@@ -633,6 +639,7 @@ public:
     SDL_Window *window;
     bool quitting = false;
     bool isSimulating = false;
+    bool isOptimizing = false;
     int screenWidth = 60*16;
     int screenHeight = 60*9;
     int displayWidth = 60*16;

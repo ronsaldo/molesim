@@ -527,7 +527,12 @@ void Simulation::detectAndResolveCollisions()
     auto broadphasePairs = computeBroadphase();
     computeNarrowPhase(broadphasePairs);
     resolveContactManifoldsCollisionsAndConstraints();
-    computeTotalEnergy(broadphasePairs);
+}
+
+Scalar Simulation::computeTotalEnergy()
+{
+    auto broadphasePairs = computeBroadphase();
+    return computeTotalEnergyWithPairs(broadphasePairs);
 }
 
 std::vector<std::pair<MoleculePtr, MoleculePtr>> Simulation::computeBroadphase()
@@ -608,13 +613,13 @@ void Simulation::computeBVHPairNarrowPhase(const MoleculePtr &firstMolecule, con
 
 }
 
-void Simulation::computeTotalEnergy(const std::vector<std::pair<MoleculePtr, MoleculePtr>> &broadphasePairs)
+Scalar Simulation::computeTotalEnergyWithPairs(const std::vector<std::pair<MoleculePtr, MoleculePtr>> &broadphasePairs)
 {
-    totalEnergy = 0;
+    Scalar totalEnergy = 0;
     for(auto &pair: broadphasePairs)
         totalEnergy += computePairEnergy(pair.first, pair.second);
 
-    printf("Total energy: %f\n", totalEnergy);
+    return totalEnergy;
 }
 
 Scalar Simulation::computePairEnergy(const MoleculePtr &firstMolecule, const MoleculePtr &secondMolecule)
@@ -878,6 +883,10 @@ void Simulation::update(float deltaTime)
     evaluateForceGenerators(deltaTime);
     integrateMovement(deltaTime);
     detectAndResolveCollisions();
+}
+
+void Simulation::performOptimizationStep()
+{
 }
 
 } // End of namespace Molesim
