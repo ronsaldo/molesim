@@ -7,6 +7,7 @@
 #include <string>
 #include <vector>
 #include <memory>
+#include <random>
 #include "Vector3.hpp"
 #include "Quaternion.hpp"
 #include "RigidTransform.hpp"
@@ -158,14 +159,7 @@ struct Molecule
 
 struct Simulation
 {
-    std::vector<MoleculePtr> molecules;
-    std::vector<ContactPoint> contactPoints;
-
-    Scalar restingContactVelocityLimit = 0.1f;
-    bool useNaiveNarrowphase = false;
-
-    Scalar energyMaxRadiusDefault      = 12.f;
-    Scalar optimizationStepSizeDefault = 1.f;
+    Simulation();
 
     void resetNetForces();
     void evaluateForceGenerators(float deltaTime);
@@ -193,6 +187,32 @@ struct Simulation
     void update(float deltaTime);
     void performOptimizationSteps();
     void performOptimizationStep();
+
+
+    inline int nextRandomInteger(int min, int max)
+    {
+        // in the range [min, max]
+        std::uniform_int_distribution<> distribution(min, max);
+        return distribution(randomEngine);
+    }
+
+    inline float nextRandomScalar(Scalar min, Scalar max)
+    {
+        // in the range [min, max)
+        std::uniform_real_distribution<Scalar> distribution(min, max);
+        return distribution(randomEngine);
+    }
+
+    std::vector<MoleculePtr> molecules;
+    std::vector<ContactPoint> contactPoints;
+
+    Scalar restingContactVelocityLimit = 0.1f;
+    bool useNaiveNarrowphase = false;
+
+    Scalar energyMaxRadiusDefault      = 12.f;
+    Scalar optimizationStepSizeDefault = 1.f;
+
+    std::mt19937 randomEngine;
 };
 
 void initializeAtomColorConventions();

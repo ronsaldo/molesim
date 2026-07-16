@@ -502,6 +502,10 @@ void Molecule::applyImpulseInRelativePosition(const Vector3 &impulse, const Vect
 	angularVelocity += worldInverseInertiaTensor * (relativePoint.cross(impulse));
 }
 
+Simulation::Simulation()
+{
+    randomEngine.seed(42);
+}
 
 void Simulation::resetNetForces()
 {
