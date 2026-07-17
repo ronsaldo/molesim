@@ -97,6 +97,8 @@ struct ContactPoint
 struct Molecule
 {
     RigidTransform transform;
+    RigidTransform bestTransform;
+    Scalar bestTransformEnergy = INFINITY;
 
     Scalar linearDamping = 0.2f;
     Scalar angularDamping = 0.2f;
@@ -186,6 +188,7 @@ struct Simulation
 
     void update(float deltaTime);
     void performOptimizationSteps();
+    void performOptimizationLoadTransform();
     void performOptimizationStep();
 
 
@@ -208,6 +211,8 @@ struct Simulation
 
     Scalar restingContactVelocityLimit = 0.1f;
     bool useNaiveNarrowphase = false;
+    size_t simulationMoleculeIndex = 0;
+    size_t optimizationStepCount = 1;
 
     Scalar energyMaxRadiusDefault      = 12.f;
     Scalar optimizationStepSizeDefault = 1.f;

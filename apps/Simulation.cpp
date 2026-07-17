@@ -891,13 +891,50 @@ void Simulation::update(float deltaTime)
 
 void Simulation::performOptimizationSteps()
 {
-    performOptimizationStep();
+    if(simulationMoleculeIndex >= molecules.size())
+        return;
+
+    performOptimizationLoadTransform();
+    for(size_t optimizationStep = 0; optimizationStep < optimizationStepCount; ++optimizationStep)
+        performOptimizationStep();
+}
+
+void Simulation::performOptimizationLoadTransform()
+{
+    auto &simulationMolecule = molecules[simulationMoleculeIndex];
+
+    Scalar energy = computeTotalEnergy();
+    if(energy < simulationMolecule->bestTransformEnergy)
+    {
+        simulationMolecule->bestTransform = simulationMolecule->transform;
+        simulationMolecule->bestTransformEnergy = energy;
+    }
+        
 }
 
 void Simulation::performOptimizationStep()
 {
+    auto &simulationMolecule = molecules[simulationMoleculeIndex];
+
+    auto randomVector = Vector3(nextRandomScalar(-1, 1), nextRandomScalar(-1, 1), nextRandomScalar(-1, 1));
+    auto randomTransform = RigidTransform::WithTranslation(randomVector);
+    simulationMolecule->transform = randomTransform.transformTransform(simulationMolecule->bestTransform);
+
     Scalar energy = computeTotalEnergy();
-    printf("Energy %f\n", energy);
+    if(energy < simulationMolecule->bestTransformEnergy)
+    {
+        //printf("Energy %f\n", energy);
+        simulationMolecule->bestTransform = simulationMolecule->transform;
+        simulationMolecule->bestTransformEnergy = energy;
+    }
+    else
+    {
+        simulationMolecule->transform = simulationMolecule->bestTransform;
+
+    }
+
+    //printf("Energy %f randVector %f %f %f\n", energy, randomVector.x, randomVector.y, randomVector.z);
+    //simulationMolecule->transform.translation += randomVector;
 }
 
 } // End of namespace Molesim
