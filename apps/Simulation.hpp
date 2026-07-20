@@ -25,6 +25,7 @@ typedef std::shared_ptr<struct Simulation> SimulationPtr;
 enum class SpatialSubdivisionAlgorithm
 {
     Naive,
+    Grid,
     BVH
 };
 
@@ -155,6 +156,7 @@ struct Molecule
     void computeInertiaTensor();
     void updateWorldInertiaTensor();
     void computeBVH();
+    void computeGrid();
     void prepareForSimulation(SpatialSubdivisionAlgorithm spatialSubdivisionAlgorithm);
 
     Scalar computeAngularInertiaForRelativeContactPoint(const Vector3 &relativePoint, const Vector3 &normal) const;
@@ -178,6 +180,7 @@ struct Simulation
     void computeNarrowPhase(const std::vector<std::pair<MoleculePtr, MoleculePtr>> &broadphasePairs);
     void computePairNarrowPhase(const MoleculePtr &firstMolecule, const MoleculePtr &secondMolecule);
     void computeNaivePairNarrowPhase(const MoleculePtr &firstMolecule, const MoleculePtr &secondMolecule);
+    void computeGridPairNarrowPhase(const MoleculePtr &firstMolecule, const MoleculePtr &secondMolecule);
     void computeBVHPairNarrowPhase(const MoleculePtr &firstMolecule, const MoleculePtr &secondMolecule);
 
     void emitContactPoint(const MoleculePtr &firstMolecule, const MoleculePtr &secondMolecule, size_t firstAtomIndex, size_t secondAtomIndex);
@@ -186,6 +189,7 @@ struct Simulation
     Scalar computeTotalEnergyWithPairs(const std::vector<std::pair<MoleculePtr, MoleculePtr>> &broadphasePairs);
     Scalar computePairEnergy(const MoleculePtr &firstMolecule, const MoleculePtr &secondMolecule);
     Scalar computeNaivePairEnergy(const MoleculePtr &firstMolecule, const MoleculePtr &secondMolecule);
+    Scalar computeGridPairEnergy(const MoleculePtr &firstMolecule, const MoleculePtr &secondMolecule);
     Scalar computeBVHPairEnergy(const MoleculePtr &firstMolecule, const MoleculePtr &secondMolecule);
 
     void resolveContactManifoldsCollisionsAndConstraints();

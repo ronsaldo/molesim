@@ -331,6 +331,10 @@ void Molecule::computeBVH()
     bvh.buildBottomUp(bvhLeaves);
 }
 
+void Molecule::computeGrid()
+{
+}
+
 void Molecule::prepareForSimulation(SpatialSubdivisionAlgorithm spatialSubdivisionAlgorithm)
 {
     translateToCenterOfMass();
@@ -340,6 +344,9 @@ void Molecule::prepareForSimulation(SpatialSubdivisionAlgorithm spatialSubdivisi
     {
     case SpatialSubdivisionAlgorithm::Naive:
         // Nothing is required here
+        break;
+    case SpatialSubdivisionAlgorithm::Grid:
+        computeGrid();
         break;
     case SpatialSubdivisionAlgorithm::BVH:
         computeBVH();
@@ -581,8 +588,14 @@ void Simulation::computePairNarrowPhase(const MoleculePtr &firstMolecule, const 
     case SpatialSubdivisionAlgorithm::Naive:
         computeNaivePairNarrowPhase(firstMolecule, secondMolecule);
         break;
+    case SpatialSubdivisionAlgorithm::Grid:
+        computeGridPairNarrowPhase(firstMolecule, secondMolecule);
+        break;
     case SpatialSubdivisionAlgorithm::BVH:
         computeBVHPairNarrowPhase(firstMolecule, secondMolecule);
+        break;
+    default:
+        abort();
         break;
     }
 }
@@ -605,6 +618,10 @@ void Simulation::computeNaivePairNarrowPhase(const MoleculePtr &firstMolecule, c
                 emitContactPoint(firstMolecule, secondMolecule, i, j);
         }
     }
+}
+
+void Simulation::computeGridPairNarrowPhase(const MoleculePtr &firstMolecule, const MoleculePtr &secondMolecule)
+{
 }
 
 void Simulation::computeBVHPairNarrowPhase(const MoleculePtr &firstMolecule, const MoleculePtr &secondMolecule)
@@ -645,8 +662,13 @@ Scalar Simulation::computePairEnergy(const MoleculePtr &firstMolecule, const Mol
     {
     case SpatialSubdivisionAlgorithm::Naive:
         return computeNaivePairEnergy(firstMolecule, secondMolecule);
+    case SpatialSubdivisionAlgorithm::Grid:
+        return computeGridPairEnergy(firstMolecule, secondMolecule);
     case SpatialSubdivisionAlgorithm::BVH:
         return computeBVHPairEnergy(firstMolecule, secondMolecule);
+    default:
+        abort();
+        break;
     }
 }
 
@@ -676,6 +698,11 @@ Scalar Simulation::computeNaivePairEnergy(const MoleculePtr &firstMolecule, cons
     }
 
     return energy;
+}
+
+Scalar Simulation::computeGridPairEnergy(const MoleculePtr &firstMolecule, const MoleculePtr &secondMolecule)
+{
+    return 0;
 }
 
 Scalar Simulation::computeBVHPairEnergy(const MoleculePtr &firstMolecule, const MoleculePtr &secondMolecule)

@@ -44,6 +44,10 @@ int main(int argc, const char **argv)
             {
                 spatialSubdivisionAlgorithm = SpatialSubdivisionAlgorithm::Naive;
             }
+            else if(!strcmp(arg, "-grid"))
+            {
+                spatialSubdivisionAlgorithm = SpatialSubdivisionAlgorithm::Grid;
+            }
             else if(!strcmp(arg, "-bvh"))
             {
                 spatialSubdivisionAlgorithm = SpatialSubdivisionAlgorithm::Naive;
