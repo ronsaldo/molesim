@@ -333,6 +333,12 @@ void Molecule::computeBVH()
 
 void Molecule::computeGrid()
 {
+    grid.setupForBoundingBox(boundingBox);
+    for(size_t i = 0; i < atomStates.size(); ++i)
+    {
+        auto center = atomStates[i].position;
+        grid.addPoint(center, i);
+    }
 }
 
 void Molecule::prepareForSimulation(SpatialSubdivisionAlgorithm spatialSubdivisionAlgorithm)

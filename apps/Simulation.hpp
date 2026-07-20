@@ -12,12 +12,14 @@
 #include "Quaternion.hpp"
 #include "RigidTransform.hpp"
 #include "AABox.hpp"
+#include "Grid.hpp"
 #include "BVH.hpp"
 #include "Sphere.hpp"
 #include "AGPU/agpu.hpp"
 
 namespace Molesim
 {
+typedef Grid<size_t> MoleculeGrid;
 typedef BoundingVolumeHierachy<size_t> MoleculeBVH;
 typedef std::shared_ptr<struct Molecule> MoleculePtr;
 typedef std::shared_ptr<struct Simulation> SimulationPtr;
@@ -135,6 +137,7 @@ struct Molecule
     std::vector<AtomRenderingState> atomStates;
     std::vector<std::pair<size_t, size_t>> bonds;
 
+    MoleculeGrid grid;
     MoleculeBVH bvh;
 
     agpu_buffer_ref modelStateBuffer;
