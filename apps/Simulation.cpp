@@ -628,6 +628,24 @@ void Simulation::computeNaivePairNarrowPhase(const MoleculePtr &firstMolecule, c
 
 void Simulation::computeGridPairNarrowPhase(const MoleculePtr &firstMolecule, const MoleculePtr &secondMolecule)
 {
+    for(size_t firstAtomIndex = 0; firstAtomIndex < firstMolecule->atomStates.size(); ++firstAtomIndex)
+    {
+        auto &firstAtom = firstMolecule->atomStates[firstAtomIndex];
+        auto firstAtomWorldPosition = firstMolecule->transform.transformPosition(firstAtom.position);
+        auto firstAtomPositionInSecondMolecule = secondMolecule->transform.inverseTransformPosition(firstAtomWorldPosition);
+        auto firstAtomBoundingBoxInSecondMolecule = AABox::ForSphere(firstAtomPositionInSecondMolecule, firstAtom.radius);
+
+        secondMolecule->grid.nodesIntersectingBoxDo(firstAtomBoundingBoxInSecondMolecule, [&](size_t secondAtomIndex){
+            auto &secondAtom = secondMolecule->atomStates[secondAtomIndex];
+            auto secondAtomWorldPosition = secondMolecule->transform.transformPosition(secondAtom.position);
+
+            auto deltaVector = firstAtomWorldPosition - secondAtomWorldPosition;
+            auto deltaLength2 = deltaVector.length2();
+            auto totalRadius = firstAtom.radius + secondAtom.radius;
+            if(deltaLength2 < totalRadius*totalRadius)
+                emitContactPoint(firstMolecule, secondMolecule, firstAtomIndex, secondAtomIndex);
+        });
+    }
 }
 
 void Simulation::computeBVHPairNarrowPhase(const MoleculePtr &firstMolecule, const MoleculePtr &secondMolecule)
@@ -708,7 +726,32 @@ Scalar Simulation::computeNaivePairEnergy(const MoleculePtr &firstMolecule, cons
 
 Scalar Simulation::computeGridPairEnergy(const MoleculePtr &firstMolecule, const MoleculePtr &secondMolecule)
 {
-    return 0;
+    Scalar energy = 0;
+    for(size_t firstAtomIndex = 0; firstAtomIndex < firstMolecule->atomStates.size(); ++firstAtomIndex)
+    {
+        auto &firstAtom = firstMolecule->atomStates[firstAtomIndex];
+        auto &firstAtomDesc = firstMolecule->atomDescriptions[firstAtomIndex];
+        auto firstAtomWorldPosition = firstMolecule->transform.transformPosition(firstAtom.position);
+        auto firstAtomPositionInSecondMolecule = secondMolecule->transform.inverseTransformPosition(firstAtomWorldPosition);
+        auto firstAtomBoundingBoxInSecondMolecule = AABox::ForSphere(firstAtomPositionInSecondMolecule, firstAtom.radius + energyMaxRadiusDefault);
+
+        secondMolecule->grid.nodesIntersectingBoxDo(firstAtomBoundingBoxInSecondMolecule, [&](size_t secondAtomIndex){
+            auto &secondAtom = secondMolecule->atomStates[secondAtomIndex];
+            auto &secondAtomDesc = secondMolecule->atomDescriptions[secondAtomIndex];
+            auto secondAtomWorldPosition = secondMolecule->transform.transformPosition(secondAtom.position);
+
+            auto deltaVector = firstAtomWorldPosition - secondAtomWorldPosition;
+            auto deltaLength2 = deltaVector.length2();
+            if(deltaLength2 > energyMaxRadiusDefault*energyMaxRadiusDefault)
+                return;
+
+            energy += lennardJonesCoulombic(
+                    firstAtomWorldPosition, firstAtom.radius, firstAtomDesc.epsilon, firstAtomDesc.charge,
+                    secondAtomWorldPosition, secondAtom.radius, secondAtomDesc.epsilon, secondAtomDesc.charge);
+        });
+    }
+
+    return energy;
 }
 
 Scalar Simulation::computeBVHPairEnergy(const MoleculePtr &firstMolecule, const MoleculePtr &secondMolecule)

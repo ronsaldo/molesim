@@ -23,8 +23,60 @@ struct IVector3
         return IVector3(1, 1, 1);
     }
 
+    bool operator==(const IVector3 &o) const
+    {
+        return x == o.x && y == o.y;
+    }
+
+    bool operator!=(const IVector3 &o) const
+    {
+        return !(*this == o);
+    }
+
+    IVector3 operator+() const
+    {
+        return *this;
+    }
+
+    IVector3 operator-() const
+    {
+        return IVector3(-x, -y, -z);
+    }
+
+    IVector3 operator+(const IVector3 &o) const
+    {
+        return IVector3(x + o.x, y + o.y, z + o.z);
+    }
+
+    IVector3 operator-(const IVector3 &o) const
+    {
+        return IVector3(x - o.x, y - o.y, z - o.z);
+    }
+
+    IVector3 operator*(const IVector3 &o) const
+    {
+        return IVector3(x * o.x, y * o.y, z * o.z);
+    }
+
+    IVector3 operator/(const IVector3 &o) const
+    {
+        return IVector3(x / o.x, y / o.y, z / o.z);
+    }
+
+
     int x, y, z;
 };
+
+inline IVector3 min(IVector3 a, IVector3 b)
+{
+    return IVector3(min(a.x, b.x), min(a.y, b.y), min(a.z, b.z));
+}
+
+inline IVector3 max(IVector3 a, IVector3 b)
+{
+    return IVector3(max(a.x, b.x), max(a.y, b.y), max(a.z, b.z));
+}
+
 
 } // End of namespace Molesim
 

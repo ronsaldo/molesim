@@ -57,6 +57,33 @@ public:
             gridPosition.x;
     }
 
+    template<typename FT>
+    void nodesIntersectingBoxDo(const AABox &box, FT &&aBlock)
+    {
+        auto minGridPosition = max(getGridPosition(box.minCorner), IVector3(0));
+        auto maxGridPosition = min(getGridPosition(box.maxCorner), gridSize - IVector3(1));
+        //printf("boxMin: %f %f %f\n", box.minCorner.x, box.minCorner.y, box.minCorner.z);
+        //printf("boxMax: %f %f %f\n", box.maxCorner.x, box.maxCorner.y, box.maxCorner.z);
+
+        //printf("minGrid: %d %d %d\n", minGridPosition.x, minGridPosition.y, minGridPosition.z);
+        //printf("maxGrid: %d %d %d\n", maxGridPosition.x, maxGridPosition.y, maxGridPosition.z);
+        for(int x = minGridPosition.x; x <= maxGridPosition.x; ++x)
+        {
+            for(int y = minGridPosition.y; y <= maxGridPosition.y; ++y)
+            {
+                for(int z = minGridPosition.z; z <= maxGridPosition.z; ++z)
+                {
+                    auto currentCell = IVector3(x, y, z) ;
+                    auto currentCellIndex = getGridIndex(currentCell);
+
+                    auto &cell = grid[currentCellIndex];
+                    for(auto cellElement : cell)
+                        aBlock(cellElement);
+                }
+            }
+        }
+    }
+
     Vector3 origin;
     Vector3 extent;
     Vector3 cellSize;
