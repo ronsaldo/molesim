@@ -22,6 +22,12 @@ typedef BoundingVolumeHierachy<size_t> MoleculeBVH;
 typedef std::shared_ptr<struct Molecule> MoleculePtr;
 typedef std::shared_ptr<struct Simulation> SimulationPtr;
 
+enum class SpatialSubdivisionAlgorithm
+{
+    Naive,
+    BVH
+};
+
 /**
  * Sybyl enum taken from UDock2
  */
@@ -149,14 +155,14 @@ struct Molecule
     void computeInertiaTensor();
     void updateWorldInertiaTensor();
     void computeBVH();
-    void prepareForSimulation();
+    void prepareForSimulation(SpatialSubdivisionAlgorithm spatialSubdivisionAlgorithm);
 
     Scalar computeAngularInertiaForRelativeContactPoint(const Vector3 &relativePoint, const Vector3 &normal) const;
     Matrix3x3 computeVelocityPerImpulseWorldMatrixForRelativeContactPoint(const Vector3 &relativePoint) const;
     Vector3 computeVelocityAtRelativePoint(const Vector3 &relativePoint);
 
-    void createFirstTestMolecule();
-    void createSecondTestMolecule();
+    void createFirstTestMolecule(SpatialSubdivisionAlgorithm spatialSubdivisionAlgorithm);
+    void createSecondTestMolecule(SpatialSubdivisionAlgorithm spatialSubdivisionAlgorithm);
 };
 
 struct Simulation
@@ -210,7 +216,7 @@ struct Simulation
     std::vector<ContactPoint> contactPoints;
 
     Scalar restingContactVelocityLimit = 0.1f;
-    bool useNaiveNarrowphase = false;
+    SpatialSubdivisionAlgorithm spatialSubdivisionAlgorithm = SpatialSubdivisionAlgorithm::BVH;
     size_t simulationMoleculeIndex = 0;
     size_t optimizationStepCount = 1;
 

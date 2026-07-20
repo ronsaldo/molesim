@@ -331,12 +331,20 @@ void Molecule::computeBVH()
     bvh.buildBottomUp(bvhLeaves);
 }
 
-void Molecule::prepareForSimulation()
+void Molecule::prepareForSimulation(SpatialSubdivisionAlgorithm spatialSubdivisionAlgorithm)
 {
     translateToCenterOfMass();
     computeBoundingBox();
     computeInertiaTensor();
-    computeBVH();
+    switch (spatialSubdivisionAlgorithm)
+    {
+    case SpatialSubdivisionAlgorithm::Naive:
+        // Nothing is required here
+        break;
+    case SpatialSubdivisionAlgorithm::BVH:
+        computeBVH();
+        break;
+    }
 }
 
 Scalar Molecule::computeAngularInertiaForRelativeContactPoint(const Vector3 &relativePoint, const Vector3 &normal) const
@@ -359,7 +367,7 @@ Vector3 Molecule::computeVelocityAtRelativePoint(const Vector3 &relativePoint)
     return linearVelocity + angularVelocity.cross(relativePoint);
 }
 
-void Molecule::createFirstTestMolecule()
+void Molecule::createFirstTestMolecule(SpatialSubdivisionAlgorithm spatialSubdivisionAlgorithm)
 {
     {
         AtomDescription atomDescription;
@@ -374,11 +382,11 @@ void Molecule::createFirstTestMolecule()
         atomState.color = Vector4(0.8f, 0.1f, 0.1f, 1.0f);
         atomStates.push_back(atomState);
     }
-    prepareForSimulation();
+    prepareForSimulation(spatialSubdivisionAlgorithm);
     transform.translation = Vector3(-0.25, 0.0, 0.0);
 }
 
-void Molecule::createSecondTestMolecule()
+void Molecule::createSecondTestMolecule(SpatialSubdivisionAlgorithm spatialSubdivisionAlgorithm)
 {
     {
         AtomDescription atomDescription;
@@ -393,7 +401,7 @@ void Molecule::createSecondTestMolecule()
         atomState.color = Vector4(0.8f, 0.1f, 0.1f, 1.0f);
         atomStates.push_back(atomState);
     }
-    prepareForSimulation();
+    prepareForSimulation(spatialSubdivisionAlgorithm);
     transform.translation = Vector3(0.25, 0.0, 0.0);
 }
 
@@ -568,10 +576,15 @@ void Simulation::computeNarrowPhase(const std::vector<std::pair<MoleculePtr, Mol
 
 void Simulation::computePairNarrowPhase(const MoleculePtr &firstMolecule, const MoleculePtr &secondMolecule)
 {
-    if(useNaiveNarrowphase)
+    switch (spatialSubdivisionAlgorithm)
+    {
+    case SpatialSubdivisionAlgorithm::Naive:
         computeNaivePairNarrowPhase(firstMolecule, secondMolecule);
-    else
+        break;
+    case SpatialSubdivisionAlgorithm::BVH:
         computeBVHPairNarrowPhase(firstMolecule, secondMolecule);
+        break;
+    }
 }
 
 void Simulation::computeNaivePairNarrowPhase(const MoleculePtr &firstMolecule, const MoleculePtr &secondMolecule)
@@ -628,10 +641,13 @@ Scalar Simulation::computeTotalEnergyWithPairs(const std::vector<std::pair<Molec
 
 Scalar Simulation::computePairEnergy(const MoleculePtr &firstMolecule, const MoleculePtr &secondMolecule)
 {
-    if(useNaiveNarrowphase)
+    switch (spatialSubdivisionAlgorithm)
+    {
+    case SpatialSubdivisionAlgorithm::Naive:
         return computeNaivePairEnergy(firstMolecule, secondMolecule);
-    else
+    case SpatialSubdivisionAlgorithm::BVH:
         return computeBVHPairEnergy(firstMolecule, secondMolecule);
+    }
 }
 
 Scalar Simulation::computeNaivePairEnergy(const MoleculePtr &firstMolecule, const MoleculePtr &secondMolecule)

@@ -43,7 +43,7 @@ public:
         bool debugLayerEnabled = false;
         agpu_uint platformIndex = 0;
         agpu_uint gpuIndex = 0;
-        bool useNaiveCollisionDetection = false;
+        SpatialSubdivisionAlgorithm spatialSubdivisionAlgorithm = SpatialSubdivisionAlgorithm::BVH;
 
         for(int i = 1; i < argc; ++i)
         {
@@ -76,9 +76,13 @@ public:
                 {
                     gpuIndex = atoi(argv[++argc]);
                 }
-                else if(!strcmp(arg, "-naive-collisions"))
+                else if(!strcmp(arg, "-naive"))
                 {
-                    useNaiveCollisionDetection = true;
+                    spatialSubdivisionAlgorithm = SpatialSubdivisionAlgorithm::Naive;
+                }
+                else if(!strcmp(arg, "-bvh"))
+                {
+                    spatialSubdivisionAlgorithm = SpatialSubdivisionAlgorithm::BVH;
                 }
                 else
                 {
@@ -95,14 +99,14 @@ public:
 
         // Load the molecules
         simulation = std::make_shared<Simulation> ();
-        simulation->useNaiveNarrowphase = useNaiveCollisionDetection;
+        simulation->spatialSubdivisionAlgorithm = spatialSubdivisionAlgorithm;
         initializeAtomColorConventions();
         for(auto &fileName : moleculeFileNames)
         {
             auto molecule = loadMolecule(fileName);
             if(!molecule)
                 return 1;
-            molecule->prepareForSimulation();
+            molecule->prepareForSimulation(spatialSubdivisionAlgorithm);
             simulation->molecules.push_back(molecule);
         }
 
@@ -111,13 +115,13 @@ public:
         {
             {
                 auto firstMolecule = std::make_shared<Molecule> ();
-                firstMolecule->createFirstTestMolecule();
+                firstMolecule->createFirstTestMolecule(spatialSubdivisionAlgorithm);
                 simulation->molecules.push_back(firstMolecule);
             }
 
             {
                 auto secondMolecule = std::make_shared<Molecule> ();
-                secondMolecule->createSecondTestMolecule();
+                secondMolecule->createSecondTestMolecule(spatialSubdivisionAlgorithm);
                 simulation->molecules.push_back(secondMolecule);
             }
         }
