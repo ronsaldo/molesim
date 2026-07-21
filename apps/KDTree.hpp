@@ -16,7 +16,7 @@ struct KDTreeEntry
     KDTreeEntry(const Vector3 &initPoint, const PayloadType &initPayload)
         : point(initPoint), payload(initPayload) {}
 
-        Vector3 point;
+    Vector3 point;
     PayloadType payload;
 };
 
@@ -29,6 +29,7 @@ struct KDTreeNode
     typedef PT PayloadType;
 
     EntryType entry;
+    size_t axis;
     std::shared_ptr<TreeNodeType> left;
     std::shared_ptr<TreeNodeType> right;
 };
@@ -47,6 +48,7 @@ struct KDTree
 
     std::shared_ptr<TreeNodeType> buildNodeWithEntries(std::vector<EntryType> &entries, int depth)
     {
+        int axis = depth % 3;
         if(entries.size() == 0)
         {
             return nullptr;
@@ -55,10 +57,10 @@ struct KDTree
         {
             auto leaf = std::make_shared<TreeNodeType> ();
             leaf->entry = entries[0];
+            leaf->axis = axis;
             return leaf;
         }
 
-        int axis = depth % 3;
         std::sort(entries.begin(), entries.end(), [=](const EntryType &a, const EntryType &b){
             return a.point.elements[axis] < b.point.elements[axis];
         });
@@ -72,9 +74,34 @@ struct KDTree
         auto rightNode = buildNodeWithEntries(rightEntries, depth + 1);
         auto node = std::make_shared<TreeNodeType> ();
         node->entry = middleEntry;
+        node->axis = axis;
         node->left = leftNode;
         node->right = rightNode;
         return node;
+    }
+
+    template<typename FT>
+    void nodeRecursivelyIntersectingBoxDo(TreeNodeType *node, const AABox &box, FT &&aBlock)
+    {
+        if(!node)
+            return;
+
+        // Are we contained in the box?
+        if(box.containsPoint(node->entry.point))
+            aBlock(node->entry.payload);
+
+        auto axis = node->axis;
+        if(box.minCorner.elements[axis] <= node->entry.point.elements[axis])
+            nodeRecursivelyIntersectingBoxDo(node->left.get(), box, aBlock);
+
+        if(box.maxCorner.elements[axis] >= node->entry.point.elements[axis])
+            nodeRecursivelyIntersectingBoxDo(node->right.get(), box, aBlock);
+    }
+
+    template<typename FT>
+    void nodesIntersectingBoxDo(const AABox &box, FT &&aBlock)
+    {
+        nodeRecursivelyIntersectingBoxDo(rootNode.get(), box, aBlock);
     }
 
     std::shared_ptr<TreeNodeType> rootNode;

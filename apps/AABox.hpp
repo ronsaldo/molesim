@@ -151,6 +151,14 @@ public:
         return !isBoxOutside(o);
     }
 
+    bool containsPoint(const Vector3 &point) const
+    {
+        return
+            minCorner.x <= point.x && point.x <= maxCorner.x &&
+            minCorner.y <= point.y && point.y <= maxCorner.y &&
+            minCorner.z <= point.z && point.z <= maxCorner.z;
+    }
+
     RayCastingResult intersectionsWithRay(const Ray3D &ray) const
     {
         // Slab testing algorithm from: A Ray-Box Intersection Algorithm andEfficient Dynamic Voxel Rendering. By Majercik et al
