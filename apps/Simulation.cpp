@@ -341,6 +341,19 @@ void Molecule::computeGrid()
     }
 }
 
+void Molecule::computeKDTree()
+{
+    std::vector<MoleculeKDTree::EntryType> entries;
+    for(size_t i = 0; i < atomStates.size(); ++i)
+    {
+        auto center = atomStates[i].position;
+        auto entry = MoleculeKDTree::EntryType(center, i);
+        entries.push_back(entry);
+    }
+
+    kdTree.buildWithEntries(entries);
+}
+
 void Molecule::prepareForSimulation(SpatialSubdivisionAlgorithm spatialSubdivisionAlgorithm)
 {
     translateToCenterOfMass();
@@ -353,6 +366,9 @@ void Molecule::prepareForSimulation(SpatialSubdivisionAlgorithm spatialSubdivisi
         break;
     case SpatialSubdivisionAlgorithm::Grid:
         computeGrid();
+        break;
+    case SpatialSubdivisionAlgorithm::KDTree:
+        computeKDTree();
         break;
     case SpatialSubdivisionAlgorithm::BVH:
         computeBVH();
@@ -597,6 +613,9 @@ void Simulation::computePairNarrowPhase(const MoleculePtr &firstMolecule, const 
     case SpatialSubdivisionAlgorithm::Grid:
         computeGridPairNarrowPhase(firstMolecule, secondMolecule);
         break;
+    case SpatialSubdivisionAlgorithm::KDTree:
+        computeKDTreePairNarrowPhase(firstMolecule, secondMolecule);
+        break;
     case SpatialSubdivisionAlgorithm::BVH:
         computeBVHPairNarrowPhase(firstMolecule, secondMolecule);
         break;
@@ -648,6 +667,10 @@ void Simulation::computeGridPairNarrowPhase(const MoleculePtr &firstMolecule, co
     }
 }
 
+void Simulation::computeKDTreePairNarrowPhase(const MoleculePtr &firstMolecule, const MoleculePtr &secondMolecule)
+{
+}
+
 void Simulation::computeBVHPairNarrowPhase(const MoleculePtr &firstMolecule, const MoleculePtr &secondMolecule)
 {
     for(size_t firstAtomIndex = 0; firstAtomIndex < firstMolecule->atomStates.size(); ++firstAtomIndex)
@@ -688,6 +711,8 @@ Scalar Simulation::computePairEnergy(const MoleculePtr &firstMolecule, const Mol
         return computeNaivePairEnergy(firstMolecule, secondMolecule);
     case SpatialSubdivisionAlgorithm::Grid:
         return computeGridPairEnergy(firstMolecule, secondMolecule);
+    case SpatialSubdivisionAlgorithm::KDTree:
+        return computeKDTreePairEnergy(firstMolecule, secondMolecule);
     case SpatialSubdivisionAlgorithm::BVH:
         return computeBVHPairEnergy(firstMolecule, secondMolecule);
     default:
@@ -752,6 +777,11 @@ Scalar Simulation::computeGridPairEnergy(const MoleculePtr &firstMolecule, const
     }
 
     return energy;
+}
+
+Scalar Simulation::computeKDTreePairEnergy(const MoleculePtr &firstMolecule, const MoleculePtr &secondMolecule)
+{
+    return 0;
 }
 
 Scalar Simulation::computeBVHPairEnergy(const MoleculePtr &firstMolecule, const MoleculePtr &secondMolecule)

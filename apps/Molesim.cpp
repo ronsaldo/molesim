@@ -48,6 +48,10 @@ int main(int argc, const char **argv)
             {
                 spatialSubdivisionAlgorithm = SpatialSubdivisionAlgorithm::Grid;
             }
+            else if(!strcmp(arg, "-kd-tree"))
+            {
+                spatialSubdivisionAlgorithm = SpatialSubdivisionAlgorithm::KDTree;
+            }
             else if(!strcmp(arg, "-bvh"))
             {
                 spatialSubdivisionAlgorithm = SpatialSubdivisionAlgorithm::Naive;

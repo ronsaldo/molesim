@@ -163,7 +163,16 @@ public:
 
     static const Vector3 NormalAxis[12];
 
-    Scalar x, y, z;
+    union
+    {
+        struct
+        {
+            Scalar x, y, z;
+        };
+        
+        Scalar elements[3];
+    };
+    
 };
 
 inline bool closeTo(const Vector3 &a, const Vector3 &b)
