@@ -184,6 +184,10 @@ struct Simulation
 {
     Simulation();
 
+    void clear();
+    void createMoleculesWithRandomAtoms(size_t totalCount);
+    void createMoleculeWithRandomAtoms(size_t atomCount);
+
     void resetNetForces();
     void evaluateForceGenerators(float deltaTime);
     void integrateMovement(float deltaTime);
@@ -231,6 +235,11 @@ struct Simulation
         // in the range [min, max)
         std::uniform_real_distribution<Scalar> distribution(min, max);
         return distribution(randomEngine);
+    }
+
+    inline Vector3 nextRandomVector(Scalar min, Scalar max)
+    {
+        return Vector3(nextRandomScalar(min, max), nextRandomScalar(min, max), nextRandomScalar(min, max));
     }
 
     std::vector<MoleculePtr> molecules;

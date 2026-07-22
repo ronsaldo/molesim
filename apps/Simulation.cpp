@@ -561,6 +561,51 @@ Simulation::Simulation()
     randomEngine.seed(42);
 }
 
+void Simulation::clear()
+{
+    molecules.clear();
+    contactPoints.clear();
+}
+
+void Simulation::createMoleculesWithRandomAtoms(size_t totalCount)
+{
+    size_t halfCount = totalCount/2;
+    createMoleculeWithRandomAtoms(halfCount);
+    createMoleculeWithRandomAtoms(halfCount);
+}
+
+void Simulation::createMoleculeWithRandomAtoms(size_t atomCount)
+{
+    if(atomCount == 0)
+        return;
+
+    auto molecule = std::make_shared<Molecule> ();
+    Scalar minCoordinate = sqrt(atomCount);
+    Scalar maxCoordinate = -minCoordinate;
+
+    for(size_t i = 0; i < atomCount; ++i)
+    {
+        AtomDescription atomDescription;
+        atomDescription.mass = 1.0;
+        atomDescription.charge = 1.0;
+        atomDescription.epsilon = 1.0;
+        molecule->atomDescriptions.push_back(atomDescription);
+
+        AtomRenderingState atomState;
+        atomState.position = nextRandomVector(minCoordinate, maxCoordinate);
+        atomState.radius = 1.0;
+        atomState.color = Vector4(0.8f, 0.1f, 0.1f, 1.0f);
+        molecule->atomStates.push_back(atomState);
+    }
+
+    molecule->prepareForSimulation(spatialSubdivisionAlgorithm);
+
+    if(atomCount == 1 && molecules.empty())
+        molecule->transform.translation = Vector3(-0.25, 0.0, 0.0);
+    molecules.push_back(molecule);
+}
+
+
 void Simulation::resetNetForces()
 {
     // Update the molecules themselves.

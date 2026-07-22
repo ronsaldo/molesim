@@ -44,6 +44,7 @@ public:
         agpu_uint platformIndex = 0;
         agpu_uint gpuIndex = 0;
         SpatialSubdivisionAlgorithm spatialSubdivisionAlgorithm = SpatialSubdivisionAlgorithm::BVH;
+        size_t randomAtomCount = 0;
 
         for(int i = 1; i < argc; ++i)
         {
@@ -96,6 +97,10 @@ public:
                 {
                     spatialSubdivisionAlgorithm = SpatialSubdivisionAlgorithm::BVH;
                 }
+                else if(!strcmp(arg, "-random-atoms"))
+                {
+                    randomAtomCount = atoi(argv[++i]);
+                }
                 else
                 {
                     printHelp();
@@ -125,17 +130,25 @@ public:
         // Create the test datasets
         if(moleculeFileNames.empty())
         {
+            if(randomAtomCount > 0)
             {
-                auto firstMolecule = std::make_shared<Molecule> ();
-                firstMolecule->createFirstTestMolecule(spatialSubdivisionAlgorithm);
-                simulation->molecules.push_back(firstMolecule);
+                simulation->createMoleculesWithRandomAtoms(randomAtomCount);
+            }
+            else
+            {
+                {
+                    auto firstMolecule = std::make_shared<Molecule> ();
+                    firstMolecule->createFirstTestMolecule(spatialSubdivisionAlgorithm);
+                    simulation->molecules.push_back(firstMolecule);
+                }
+
+                {
+                    auto secondMolecule = std::make_shared<Molecule> ();
+                    secondMolecule->createSecondTestMolecule(spatialSubdivisionAlgorithm);
+                    simulation->molecules.push_back(secondMolecule);
+                }
             }
 
-            {
-                auto secondMolecule = std::make_shared<Molecule> ();
-                secondMolecule->createSecondTestMolecule(spatialSubdivisionAlgorithm);
-                simulation->molecules.push_back(secondMolecule);
-            }
         }
 
         // Get the platform.
