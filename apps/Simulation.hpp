@@ -14,6 +14,7 @@
 #include "AABox.hpp"
 #include "Grid.hpp"
 #include "KDTree.hpp"
+#include "Octree.hpp"
 #include "BVH.hpp"
 #include "Sphere.hpp"
 #include "AGPU/agpu.hpp"
@@ -22,6 +23,7 @@ namespace Molesim
 {
 typedef Grid<size_t> MoleculeGrid;
 typedef KDTree<size_t> MoleculeKDTree;
+typedef Octree<size_t> MoleculeOctree;
 typedef BoundingVolumeHierachy<size_t> MoleculeBVH;
 typedef std::shared_ptr<struct Molecule> MoleculePtr;
 typedef std::shared_ptr<struct Simulation> SimulationPtr;
@@ -31,6 +33,7 @@ enum class SpatialSubdivisionAlgorithm
     Naive,
     Grid,
     KDTree,
+    Octree,
     BVH
 };
 
@@ -142,6 +145,7 @@ struct Molecule
 
     MoleculeGrid grid;
     MoleculeKDTree kdTree;
+    MoleculeOctree octree;
     MoleculeBVH bvh;
 
     agpu_buffer_ref modelStateBuffer;
@@ -164,6 +168,7 @@ struct Molecule
     void updateWorldInertiaTensor();
     void computeBVH();
     void computeKDTree();
+    void computeOctree();
     void computeGrid();
     void prepareForSimulation(SpatialSubdivisionAlgorithm spatialSubdivisionAlgorithm);
 
@@ -190,6 +195,7 @@ struct Simulation
     void computeNaivePairNarrowPhase(const MoleculePtr &firstMolecule, const MoleculePtr &secondMolecule);
     void computeGridPairNarrowPhase(const MoleculePtr &firstMolecule, const MoleculePtr &secondMolecule);
     void computeKDTreePairNarrowPhase(const MoleculePtr &firstMolecule, const MoleculePtr &secondMolecule);
+    void computeOctreePairNarrowPhase(const MoleculePtr &firstMolecule, const MoleculePtr &secondMolecule);
     void computeBVHPairNarrowPhase(const MoleculePtr &firstMolecule, const MoleculePtr &secondMolecule);
 
     void emitContactPoint(const MoleculePtr &firstMolecule, const MoleculePtr &secondMolecule, size_t firstAtomIndex, size_t secondAtomIndex);
@@ -200,6 +206,7 @@ struct Simulation
     Scalar computeNaivePairEnergy(const MoleculePtr &firstMolecule, const MoleculePtr &secondMolecule);
     Scalar computeGridPairEnergy(const MoleculePtr &firstMolecule, const MoleculePtr &secondMolecule);
     Scalar computeKDTreePairEnergy(const MoleculePtr &firstMolecule, const MoleculePtr &secondMolecule);
+    Scalar computeOctreePairEnergy(const MoleculePtr &firstMolecule, const MoleculePtr &secondMolecule);
     Scalar computeBVHPairEnergy(const MoleculePtr &firstMolecule, const MoleculePtr &secondMolecule);
 
     void resolveContactManifoldsCollisionsAndConstraints();

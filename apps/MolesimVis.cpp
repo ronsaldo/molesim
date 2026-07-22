@@ -88,6 +88,10 @@ public:
                 {
                     spatialSubdivisionAlgorithm = SpatialSubdivisionAlgorithm::KDTree;
                 }
+                else if(!strcmp(arg, "-octree"))
+                {
+                    spatialSubdivisionAlgorithm = SpatialSubdivisionAlgorithm::Octree;
+                }
                 else if(!strcmp(arg, "-bvh"))
                 {
                     spatialSubdivisionAlgorithm = SpatialSubdivisionAlgorithm::BVH;
