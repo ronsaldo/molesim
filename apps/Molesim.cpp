@@ -20,6 +20,8 @@ int main(int argc, const char **argv)
     std::vector<std::string> moleculeFileNames;
     SpatialSubdivisionAlgorithm spatialSubdivisionAlgorithm = SpatialSubdivisionAlgorithm::BVH;
     size_t simulationIterationCount = 1000;
+    bool performEnergyOptimizations = false;
+    size_t randomAtomCount = 0;
 
     for(int i = 1; i < argc; ++i)
     {
@@ -40,6 +42,10 @@ int main(int argc, const char **argv)
             {
                 simulationIterationCount = atoi(argv[++i]);
             }
+            else if(!strcmp(arg, "-optimize-energy"))
+            {
+                performEnergyOptimizations = true;
+            }
             else if(!strcmp(arg, "-naive"))
             {
                 spatialSubdivisionAlgorithm = SpatialSubdivisionAlgorithm::Naive;
@@ -58,7 +64,11 @@ int main(int argc, const char **argv)
             }
             else if(!strcmp(arg, "-bvh"))
             {
-                spatialSubdivisionAlgorithm = SpatialSubdivisionAlgorithm::Naive;
+                spatialSubdivisionAlgorithm = SpatialSubdivisionAlgorithm::BVH;
+            }
+            else if(!strcmp(arg, "-random-atoms"))
+            {
+                randomAtomCount = atoi(argv[++i]);
             }
             else
             {
@@ -77,16 +87,23 @@ int main(int argc, const char **argv)
     initializeAtomColorConventions();
     if(moleculeFileNames.empty())
     {
+        if(randomAtomCount > 0)
         {
-            auto firstMolecule = std::make_shared<Molecule> ();
-            firstMolecule->createFirstTestMolecule(spatialSubdivisionAlgorithm);
-            simulation->molecules.push_back(firstMolecule);
+            simulation->createMoleculesWithRandomAtoms(randomAtomCount);
         }
-
+        else
         {
-            auto secondMolecule = std::make_shared<Molecule> ();
-            secondMolecule->createSecondTestMolecule(spatialSubdivisionAlgorithm);
-            simulation->molecules.push_back(secondMolecule);
+            {
+                auto firstMolecule = std::make_shared<Molecule> ();
+                firstMolecule->createFirstTestMolecule(spatialSubdivisionAlgorithm);
+                simulation->molecules.push_back(firstMolecule);
+            }
+
+            {
+                auto secondMolecule = std::make_shared<Molecule> ();
+                secondMolecule->createSecondTestMolecule(spatialSubdivisionAlgorithm);
+                simulation->molecules.push_back(secondMolecule);
+            }
         }
     }
     else
@@ -105,7 +122,8 @@ int main(int argc, const char **argv)
     {
         const auto SimulationTimeStep = 1.0f / 60.0f;
         simulation->update(SimulationTimeStep);
-        simulation->performOptimizationSteps();
+        if(performEnergyOptimizations)
+            simulation->performOptimizationSteps();
     }
 
     return 0;
