@@ -37,6 +37,8 @@ enum class SpatialSubdivisionAlgorithm
     BVH
 };
 
+const char *spatialSubdivisionAlgorithmToString(SpatialSubdivisionAlgorithm algorithm);
+
 /**
  * Sybyl enum taken from UDock2
  */

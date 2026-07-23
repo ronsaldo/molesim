@@ -121,6 +121,7 @@ int main(int argc, const char **argv)
     for(size_t i = 0; i < simulationIterationCount; ++i)
     {
         const auto SimulationTimeStep = 1.0f / 60.0f;
+        printf("Simulation iteration %zu\n", i);
         simulation->update(SimulationTimeStep);
         if(performEnergyOptimizations)
             simulation->performOptimizationSteps();

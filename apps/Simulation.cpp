@@ -9,6 +9,19 @@ namespace Molesim
 static Random randColor;
 static std::unordered_map<std::string, Vector4> atomTypeColorMap;
 
+const char *spatialSubdivisionAlgorithmToString(SpatialSubdivisionAlgorithm algorithm)
+{
+    switch(algorithm)
+    {
+    case SpatialSubdivisionAlgorithm::Naive:  return "Naive";
+    case SpatialSubdivisionAlgorithm::Grid:   return "Grid";
+    case SpatialSubdivisionAlgorithm::KDTree: return "KDTree";
+    case SpatialSubdivisionAlgorithm::Octree: return "Octree";
+    case SpatialSubdivisionAlgorithm::BVH:    return "BVH";
+    default: abort();
+    }
+}
+
 void initializeAtomColorConventions()
 {
     atomTypeColorMap["H"] = Vector4(0.4f, 0.4f, 0.4f, 1.0f);
@@ -244,7 +257,7 @@ MoleculePtr loadMolecule(const std::string &filename)
         molecule->bonds.push_back(std::make_pair(firstAtomIndex, secondAtomIndex));
     }
 
-    printf("Molecule atom count: %zu\n", molecule->atomStates.size());
+    //printf("Molecule atom count: %zu\n", molecule->atomStates.size());
     //printf("Molecule bond count: %zu\n", molecule->bonds.size());
 
     return molecule;
@@ -262,7 +275,7 @@ void Molecule::translateToCenterOfMass()
     }
 
     centerOfMass /= totalMass;
-    printf("Center of mass: %f %f %f\n", centerOfMass.x, centerOfMass.y, centerOfMass.z);
+    //printf("Center of mass: %f %f %f\n", centerOfMass.x, centerOfMass.y, centerOfMass.z);
     for(auto &state : atomStates)
         state.position -= centerOfMass;
 
@@ -278,9 +291,9 @@ void Molecule::computeBoundingBox()
         boundingBox.insertBox(atomBoundingBox);
     }
 
-    printf("Molecule bbox: %f %f %f - %f %f %f\n",
-        boundingBox.minCorner.x, boundingBox.minCorner.y, boundingBox.minCorner.z,
-        boundingBox.maxCorner.x, boundingBox.maxCorner.y, boundingBox.maxCorner.z);
+    //printf("Molecule bbox: %f %f %f - %f %f %f\n",
+    //    boundingBox.minCorner.x, boundingBox.minCorner.y, boundingBox.minCorner.z,
+    //    boundingBox.maxCorner.x, boundingBox.maxCorner.y, boundingBox.maxCorner.z);
 
 }
 
