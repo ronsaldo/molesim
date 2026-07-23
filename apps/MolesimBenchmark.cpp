@@ -90,7 +90,7 @@ void benchmarkAlgorithm(FILE *results, SpatialSubdivisionAlgorithm algorithm)
     }
 
     // Average times
-    fprintf(results, "%s Average", spatialSubdivisionAlgorithmToString(algorithm));
+    fprintf(results, "%s", spatialSubdivisionAlgorithmToString(algorithm));
     for(auto average : averageTimes)
         fprintf(results, ",%f", average);
     fprintf(results, "\n");
