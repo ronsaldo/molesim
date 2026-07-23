@@ -104,7 +104,7 @@ void benchmarkAlgorithm(FILE *results, SpatialSubdivisionAlgorithm algorithm)
 
 int main()
 {
-    FILE *results = fopen("benchmark-results.csv", "w");
+    FILE *results = fopen("benchmark-results.csv", "wb");
     if(!results)
     {
         perror("Failed to open benchmark-results.csv");
