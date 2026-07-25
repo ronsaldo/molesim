@@ -530,8 +530,8 @@ public:
         // Begin the render pass
         commandList->setShaderSignature(shaderSignature);
         commandList->beginRenderPass(mainRenderPass, backBuffer, false);
-        commandList->setViewport(0, 0, screenWidth, screenHeight);
-        commandList->setScissor(0, 0, screenWidth, screenHeight);
+        commandList->setViewport(0, 0, displayWidth, displayHeight);
+        commandList->setScissor(0, 0, displayWidth, displayHeight);
 
         // Use the pipeline state
         commandList->usePipelineState(atomRenderingPipeline);
