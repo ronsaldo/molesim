@@ -350,7 +350,8 @@ void Molecule::computeGrid()
     for(size_t i = 0; i < atomStates.size(); ++i)
     {
         auto center = atomStates[i].position;
-        grid.addPoint(center, i);
+        auto radius = atomStates[i].radius;
+        grid.addSphere(center, radius, i);
     }
 }
 
