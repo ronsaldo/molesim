@@ -13,10 +13,11 @@ struct KDTreeEntry
 {
     typedef PT PayloadType;
     KDTreeEntry() = default;
-    KDTreeEntry(const Vector3 &initPoint, const PayloadType &initPayload)
-        : point(initPoint), payload(initPayload) {}
+    KDTreeEntry(const Vector3 &initPoint, Scalar initRadius, const PayloadType &initPayload)
+        : point(initPoint), radius(initRadius), payload(initPayload) {}
 
     Vector3 point;
+    Scalar radius;
     PayloadType payload;
 };
 
@@ -86,8 +87,8 @@ struct KDTree
         if(!node)
             return;
 
-        // Are we contained in the box?
-        if(box.containsPoint(node->entry.point))
+        // Are we intersecting in the box?
+        if(box.intersectsSphere(node->entry.point, node->entry.radius))
             aBlock(node->entry.payload);
 
         auto axis = node->axis;

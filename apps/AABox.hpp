@@ -159,6 +159,22 @@ public:
             minCorner.z <= point.z && point.z <= maxCorner.z;
     }
 
+    Scalar distanceSquaredForPoint(const Vector3 &point) const
+    {
+        auto delta = (center() - point).abs();
+        return max(delta - halfExtent(), Vector3::Zeros()).length2();
+    }
+
+    Scalar distanceForPoint(const Vector3 &point) const
+    {
+        return sqrt(distanceSquaredForPoint(point));
+    }
+
+    bool intersectsSphere(const Vector3 &center, Scalar radius) const
+    {
+        return distanceSquaredForPoint(center) < radius*radius;
+    }
+
     RayCastingResult intersectionsWithRay(const Ray3D &ray) const
     {
         // Slab testing algorithm from: A Ray-Box Intersection Algorithm andEfficient Dynamic Voxel Rendering. By Majercik et al

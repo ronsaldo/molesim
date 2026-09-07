@@ -375,7 +375,8 @@ void Molecule::computeKDTree()
     for(size_t i = 0; i < atomStates.size(); ++i)
     {
         auto center = atomStates[i].position;
-        auto entry = MoleculeKDTree::EntryType(center, i);
+        auto radius = atomStates[i].radius;
+        auto entry = MoleculeKDTree::EntryType(center, radius, i);
         entries.push_back(entry);
     }
 
