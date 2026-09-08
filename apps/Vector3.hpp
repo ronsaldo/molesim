@@ -5,6 +5,12 @@
 #include <stdint.h>
 #include <ostream>
 
+// Benchmark is slower.
+#if defined(__x86_64__) || defined(__i386__)
+#include <xmmintrin.h>
+//#define MOLEVIS_USE_SSE
+#endif
+
 namespace Molesim
 {
 /**
@@ -13,13 +19,13 @@ namespace Molesim
 class Vector3
 {
 public:
-    Vector3(Scalar s = 0) : x(s), y(s), z(s)
-    {
-    }
+    Vector3(Scalar s = 0) : x(s), y(s), z(s) {}
 
-    Vector3(Scalar cx, Scalar cy, Scalar cz) : x(cx), y(cy), z(cz)
-    {
-    }
+    Vector3(Scalar cx, Scalar cy, Scalar cz) : x(cx), y(cy), z(cz) {}
+
+#ifdef MOLEVIS_USE_SSE
+    Vector3(__m128 cvector) : sseVector(cvector) {}
+#endif
 
     static Vector3 PositiveInfinity()
     {
@@ -41,14 +47,23 @@ public:
         return Vector3(1, 1, 1);
     }
 
+    Scalar sum() const
+    {
+        return x + y + z;
+    }
+
     Vector3 abs() const
     {
+#ifdef MOLEVIS_USE_SSE
+        return Vector3(_mm_max_ps(sseVector, -(*this).sseVector));
+#else
         return Vector3(Molesim::abs(x), Molesim::abs(y), Molesim::abs(z));
+#endif
     }
 
     Scalar dot(const Vector3 &o) const
     {
-        return x*o.x + y*o.y + z*o.z;
+        return ((*this)*o).sum();
     }
 
     Vector3 cross(const Vector3 &o) const
@@ -98,6 +113,33 @@ public:
         return *this;
     }
 
+#ifdef MOLEVIS_USE_SSE
+    Vector3 operator-() const
+    {
+        return Vector3(_mm_sub_ps(_mm_set1_ps(0.0f), sseVector));
+    }
+
+    Vector3 operator+(const Vector3 &o) const
+    {
+        return Vector3(_mm_add_ps(sseVector, o.sseVector));
+    }
+
+    Vector3 operator-(const Vector3 &o) const
+    {
+        return Vector3(_mm_sub_ps(sseVector, o.sseVector));
+    }
+
+    Vector3 operator*(const Vector3 &o) const
+    {
+        return Vector3(_mm_mul_ps(sseVector, o.sseVector));
+    }
+
+    Vector3 operator/(const Vector3 &o) const
+    {
+        return Vector3(_mm_div_ps(sseVector, o.sseVector));
+    }
+
+#else 
     Vector3 operator-() const
     {
         return Vector3(-x, -y, -z);
@@ -122,6 +164,7 @@ public:
     {
         return Vector3(x / o.x, y / o.y, z / o.z);
     }
+#endif
 
     Vector3 operator+=(const Vector3 &o)
     {
@@ -167,10 +210,14 @@ public:
     {
         struct
         {
-            Scalar x, y, z;
+            Scalar x, y, z, _padding;
         };
         
-        Scalar elements[3];
+        Scalar elements[4];
+
+#ifdef MOLEVIS_USE_SSE
+        __m128 sseVector;
+#endif 
     };
     
 };
@@ -180,6 +227,18 @@ inline bool closeTo(const Vector3 &a, const Vector3 &b)
     return closeTo(a.x, b.x) && closeTo(a.y, b.y) && closeTo(a.z, b.z);
 }
 
+#ifdef MOLEVIS_USE_SSE
+inline Vector3 min(Vector3 a, Vector3 b)
+{
+    return Vector3(_mm_min_ps(a.sseVector, b.sseVector));
+}
+
+inline Vector3 max(Vector3 a, Vector3 b)
+{
+    return Vector3(_mm_max_ps(a.sseVector, b.sseVector));
+}
+
+#else
 inline Vector3 min(Vector3 a, Vector3 b)
 {
     return Vector3(min(a.x, b.x), min(a.y, b.y), min(a.z, b.z));
@@ -189,6 +248,7 @@ inline Vector3 max(Vector3 a, Vector3 b)
 {
     return Vector3(max(a.x, b.x), max(a.y, b.y), max(a.z, b.z));
 }
+#endif
 
 class CompactVector3
 {
