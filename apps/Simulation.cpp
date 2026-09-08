@@ -270,14 +270,14 @@ void Molecule::translateToCenterOfMass()
     for(size_t i = 0; i < atomStates.size(); ++i)
     {
         float mass = atomDescriptions[i].mass;
-        centerOfMass += atomStates[i].position*mass;
+        centerOfMass += atomStates[i].position.asVector3()*mass;
         totalMass += mass;
     }
 
     centerOfMass /= totalMass;
     //printf("Center of mass: %f %f %f\n", centerOfMass.x, centerOfMass.y, centerOfMass.z);
     for(auto &state : atomStates)
-        state.position -= centerOfMass;
+        state.position = state.position.asVector3() - centerOfMass;
 
     inverseTotalMass = 1.0f / totalMass;
 }
@@ -287,7 +287,7 @@ void Molecule::computeBoundingBox()
     boundingBox = AABox::Empty();
     for(auto &atom : atomStates)
     {
-        AABox atomBoundingBox = AABox::ForSphere(atom.position, atom.radius);
+        AABox atomBoundingBox = AABox::ForSphere(atom.position.asVector3(), atom.radius);
         boundingBox.insertBox(atomBoundingBox);
     }
 
@@ -330,7 +330,7 @@ void Molecule::computeBVH()
 
     for(size_t i = 0; i < atomStates.size(); ++i)
     {
-        auto center = atomStates[i].position;
+        auto center = atomStates[i].position.asVector3();
         auto radius = atomStates[i].radius;
         auto volume = AABox::ForSphere(center, radius);
 
@@ -349,7 +349,7 @@ void Molecule::computeGrid()
     grid.setupForBoundingBox(boundingBox);
     for(size_t i = 0; i < atomStates.size(); ++i)
     {
-        auto center = atomStates[i].position;
+        auto center = atomStates[i].position.asVector3();
         auto radius = atomStates[i].radius;
         grid.addSphere(center, radius, i);
     }
@@ -360,7 +360,7 @@ void Molecule::computeOctree()
     std::vector<MoleculeOctree::EntryType> entries;
     for(size_t i = 0; i < atomStates.size(); ++i)
     {
-        auto center = atomStates[i].position;
+        auto center = atomStates[i].position.asVector3();
         auto entry = MoleculeOctree::EntryType(center, i);
         entries.push_back(entry);
     }
@@ -374,7 +374,7 @@ void Molecule::computeKDTree()
     std::vector<MoleculeKDTree::EntryType> entries;
     for(size_t i = 0; i < atomStates.size(); ++i)
     {
-        auto center = atomStates[i].position;
+        auto center = atomStates[i].position.asVector3();
         auto radius = atomStates[i].radius;
         auto entry = MoleculeKDTree::EntryType(center, radius, i);
         entries.push_back(entry);
@@ -710,11 +710,11 @@ void Simulation::computeNaivePairNarrowPhase(const MoleculePtr &firstMolecule, c
     for(size_t i = 0; i < firstMolecule->atomStates.size(); ++i)
     {
         auto &firstAtom = firstMolecule->atomStates[i];
-        auto firstAtomWorldPosition = firstMolecule->transform.transformPosition(firstAtom.position);
+        auto firstAtomWorldPosition = firstMolecule->transform.transformPosition(firstAtom.position.asVector3());
         for(size_t j = 0; j < secondMolecule->atomStates.size(); ++j)
         {
             auto &secondAtom = secondMolecule->atomStates[j];
-            auto secondAtomWorldPosition = secondMolecule->transform.transformPosition(secondAtom.position);
+            auto secondAtomWorldPosition = secondMolecule->transform.transformPosition(secondAtom.position.asVector3());
 
             auto deltaVector = firstAtomWorldPosition - secondAtomWorldPosition;
             auto deltaLength2 = deltaVector.length2();
@@ -730,13 +730,13 @@ void Simulation::computeGridPairNarrowPhase(const MoleculePtr &firstMolecule, co
     for(size_t firstAtomIndex = 0; firstAtomIndex < firstMolecule->atomStates.size(); ++firstAtomIndex)
     {
         auto &firstAtom = firstMolecule->atomStates[firstAtomIndex];
-        auto firstAtomWorldPosition = firstMolecule->transform.transformPosition(firstAtom.position);
+        auto firstAtomWorldPosition = firstMolecule->transform.transformPosition(firstAtom.position.asVector3());
         auto firstAtomPositionInSecondMolecule = secondMolecule->transform.inverseTransformPosition(firstAtomWorldPosition);
         auto firstAtomBoundingBoxInSecondMolecule = AABox::ForSphere(firstAtomPositionInSecondMolecule, firstAtom.radius);
 
         secondMolecule->grid.nodesIntersectingBoxDo(firstAtomBoundingBoxInSecondMolecule, [&](size_t secondAtomIndex){
             auto &secondAtom = secondMolecule->atomStates[secondAtomIndex];
-            auto secondAtomWorldPosition = secondMolecule->transform.transformPosition(secondAtom.position);
+            auto secondAtomWorldPosition = secondMolecule->transform.transformPosition(secondAtom.position.asVector3());
 
             auto deltaVector = firstAtomWorldPosition - secondAtomWorldPosition;
             auto deltaLength2 = deltaVector.length2();
@@ -752,13 +752,13 @@ void Simulation::computeKDTreePairNarrowPhase(const MoleculePtr &firstMolecule, 
     for(size_t firstAtomIndex = 0; firstAtomIndex < firstMolecule->atomStates.size(); ++firstAtomIndex)
     {
         auto &firstAtom = firstMolecule->atomStates[firstAtomIndex];
-        auto firstAtomWorldPosition = firstMolecule->transform.transformPosition(firstAtom.position);
+        auto firstAtomWorldPosition = firstMolecule->transform.transformPosition(firstAtom.position.asVector3());
         auto firstAtomPositionInSecondMolecule = secondMolecule->transform.inverseTransformPosition(firstAtomWorldPosition);
         auto firstAtomBoundingBoxInSecondMolecule = AABox::ForSphere(firstAtomPositionInSecondMolecule, firstAtom.radius);
 
         secondMolecule->kdTree.nodesIntersectingBoxDo(firstAtomBoundingBoxInSecondMolecule, [&](size_t secondAtomIndex){
             auto &secondAtom = secondMolecule->atomStates[secondAtomIndex];
-            auto secondAtomWorldPosition = secondMolecule->transform.transformPosition(secondAtom.position);
+            auto secondAtomWorldPosition = secondMolecule->transform.transformPosition(secondAtom.position.asVector3());
 
             auto deltaVector = firstAtomWorldPosition - secondAtomWorldPosition;
             auto deltaLength2 = deltaVector.length2();
@@ -774,13 +774,13 @@ void Simulation::computeOctreePairNarrowPhase(const MoleculePtr &firstMolecule, 
     for(size_t firstAtomIndex = 0; firstAtomIndex < firstMolecule->atomStates.size(); ++firstAtomIndex)
     {
         auto &firstAtom = firstMolecule->atomStates[firstAtomIndex];
-        auto firstAtomWorldPosition = firstMolecule->transform.transformPosition(firstAtom.position);
+        auto firstAtomWorldPosition = firstMolecule->transform.transformPosition(firstAtom.position.asVector3());
         auto firstAtomPositionInSecondMolecule = secondMolecule->transform.inverseTransformPosition(firstAtomWorldPosition);
         auto firstAtomBoundingBoxInSecondMolecule = AABox::ForSphere(firstAtomPositionInSecondMolecule, firstAtom.radius);
 
         secondMolecule->octree.nodesIntersectingBoxDo(firstAtomBoundingBoxInSecondMolecule, [&](size_t secondAtomIndex){
             auto &secondAtom = secondMolecule->atomStates[secondAtomIndex];
-            auto secondAtomWorldPosition = secondMolecule->transform.transformPosition(secondAtom.position);
+            auto secondAtomWorldPosition = secondMolecule->transform.transformPosition(secondAtom.position.asVector3());
 
             auto deltaVector = firstAtomWorldPosition - secondAtomWorldPosition;
             auto deltaLength2 = deltaVector.length2();
@@ -796,13 +796,13 @@ void Simulation::computeBVHPairNarrowPhase(const MoleculePtr &firstMolecule, con
     for(size_t firstAtomIndex = 0; firstAtomIndex < firstMolecule->atomStates.size(); ++firstAtomIndex)
     {
         auto &firstAtom = firstMolecule->atomStates[firstAtomIndex];
-        auto firstAtomWorldPosition = firstMolecule->transform.transformPosition(firstAtom.position);
+        auto firstAtomWorldPosition = firstMolecule->transform.transformPosition(firstAtom.position.asVector3());
         auto firstAtomPositionInSecondMolecule = secondMolecule->transform.inverseTransformPosition(firstAtomWorldPosition);
         auto firstAtomBoundingBoxInSecondMolecule = AABox::ForSphere(firstAtomPositionInSecondMolecule, firstAtom.radius);
 
         secondMolecule->bvh.leavesIntersectingBoxDo(firstAtomBoundingBoxInSecondMolecule, [&](size_t secondAtomIndex){
             auto &secondAtom = secondMolecule->atomStates[secondAtomIndex];
-            auto secondAtomWorldPosition = secondMolecule->transform.transformPosition(secondAtom.position);
+            auto secondAtomWorldPosition = secondMolecule->transform.transformPosition(secondAtom.position.asVector3());
 
             auto deltaVector = firstAtomWorldPosition - secondAtomWorldPosition;
             auto deltaLength2 = deltaVector.length2();
@@ -849,12 +849,12 @@ Scalar Simulation::computeNaivePairEnergy(const MoleculePtr &firstMolecule, cons
     {
         auto &firstAtom = firstMolecule->atomStates[i];
         auto &firstAtomDesc = firstMolecule->atomDescriptions[i];
-        auto firstAtomWorldPosition = firstMolecule->transform.transformPosition(firstAtom.position);
+        auto firstAtomWorldPosition = firstMolecule->transform.transformPosition(firstAtom.position.asVector3());
         for(size_t j = 0; j < secondMolecule->atomStates.size(); ++j)
         {
             auto &secondAtom = secondMolecule->atomStates[j];
             auto &secondAtomDesc = secondMolecule->atomDescriptions[j];
-            auto secondAtomWorldPosition = secondMolecule->transform.transformPosition(secondAtom.position);
+            auto secondAtomWorldPosition = secondMolecule->transform.transformPosition(secondAtom.position.asVector3());
 
             auto deltaVector = firstAtomWorldPosition - secondAtomWorldPosition;
             auto deltaLength2 = deltaVector.length2();
@@ -877,14 +877,14 @@ Scalar Simulation::computeGridPairEnergy(const MoleculePtr &firstMolecule, const
     {
         auto &firstAtom = firstMolecule->atomStates[firstAtomIndex];
         auto &firstAtomDesc = firstMolecule->atomDescriptions[firstAtomIndex];
-        auto firstAtomWorldPosition = firstMolecule->transform.transformPosition(firstAtom.position);
+        auto firstAtomWorldPosition = firstMolecule->transform.transformPosition(firstAtom.position.asVector3());
         auto firstAtomPositionInSecondMolecule = secondMolecule->transform.inverseTransformPosition(firstAtomWorldPosition);
         auto firstAtomBoundingBoxInSecondMolecule = AABox::ForSphere(firstAtomPositionInSecondMolecule, firstAtom.radius + energyMaxRadiusDefault);
 
         secondMolecule->grid.nodesIntersectingBoxDo(firstAtomBoundingBoxInSecondMolecule, [&](size_t secondAtomIndex){
             auto &secondAtom = secondMolecule->atomStates[secondAtomIndex];
             auto &secondAtomDesc = secondMolecule->atomDescriptions[secondAtomIndex];
-            auto secondAtomWorldPosition = secondMolecule->transform.transformPosition(secondAtom.position);
+            auto secondAtomWorldPosition = secondMolecule->transform.transformPosition(secondAtom.position.asVector3());
 
             auto deltaVector = firstAtomWorldPosition - secondAtomWorldPosition;
             auto deltaLength2 = deltaVector.length2();
@@ -907,14 +907,14 @@ Scalar Simulation::computeKDTreePairEnergy(const MoleculePtr &firstMolecule, con
     {
         auto &firstAtom = firstMolecule->atomStates[firstAtomIndex];
         auto &firstAtomDesc = firstMolecule->atomDescriptions[firstAtomIndex];
-        auto firstAtomWorldPosition = firstMolecule->transform.transformPosition(firstAtom.position);
+        auto firstAtomWorldPosition = firstMolecule->transform.transformPosition(firstAtom.position.asVector3());
         auto firstAtomPositionInSecondMolecule = secondMolecule->transform.inverseTransformPosition(firstAtomWorldPosition);
         auto firstAtomBoundingBoxInSecondMolecule = AABox::ForSphere(firstAtomPositionInSecondMolecule, firstAtom.radius + energyMaxRadiusDefault);
 
         secondMolecule->kdTree.nodesIntersectingBoxDo(firstAtomBoundingBoxInSecondMolecule, [&](size_t secondAtomIndex){
             auto &secondAtom = secondMolecule->atomStates[secondAtomIndex];
             auto &secondAtomDesc = secondMolecule->atomDescriptions[secondAtomIndex];
-            auto secondAtomWorldPosition = secondMolecule->transform.transformPosition(secondAtom.position);
+            auto secondAtomWorldPosition = secondMolecule->transform.transformPosition(secondAtom.position.asVector3());
 
             auto deltaVector = firstAtomWorldPosition - secondAtomWorldPosition;
             auto deltaLength2 = deltaVector.length2();
@@ -937,14 +937,14 @@ Scalar Simulation::computeOctreePairEnergy(const MoleculePtr &firstMolecule, con
     {
         auto &firstAtom = firstMolecule->atomStates[firstAtomIndex];
         auto &firstAtomDesc = firstMolecule->atomDescriptions[firstAtomIndex];
-        auto firstAtomWorldPosition = firstMolecule->transform.transformPosition(firstAtom.position);
+        auto firstAtomWorldPosition = firstMolecule->transform.transformPosition(firstAtom.position.asVector3());
         auto firstAtomPositionInSecondMolecule = secondMolecule->transform.inverseTransformPosition(firstAtomWorldPosition);
         auto firstAtomBoundingBoxInSecondMolecule = AABox::ForSphere(firstAtomPositionInSecondMolecule, firstAtom.radius + energyMaxRadiusDefault);
 
         secondMolecule->octree.nodesIntersectingBoxDo(firstAtomBoundingBoxInSecondMolecule, [&](size_t secondAtomIndex){
             auto &secondAtom = secondMolecule->atomStates[secondAtomIndex];
             auto &secondAtomDesc = secondMolecule->atomDescriptions[secondAtomIndex];
-            auto secondAtomWorldPosition = secondMolecule->transform.transformPosition(secondAtom.position);
+            auto secondAtomWorldPosition = secondMolecule->transform.transformPosition(secondAtom.position.asVector3());
 
             auto deltaVector = firstAtomWorldPosition - secondAtomWorldPosition;
             auto deltaLength2 = deltaVector.length2();
@@ -967,14 +967,14 @@ Scalar Simulation::computeBVHPairEnergy(const MoleculePtr &firstMolecule, const 
     {
         auto &firstAtom = firstMolecule->atomStates[firstAtomIndex];
         auto &firstAtomDesc = firstMolecule->atomDescriptions[firstAtomIndex];
-        auto firstAtomWorldPosition = firstMolecule->transform.transformPosition(firstAtom.position);
+        auto firstAtomWorldPosition = firstMolecule->transform.transformPosition(firstAtom.position.asVector3());
         auto firstAtomPositionInSecondMolecule = secondMolecule->transform.inverseTransformPosition(firstAtomWorldPosition);
         auto firstAtomBoundingBoxInSecondMolecule = AABox::ForSphere(firstAtomPositionInSecondMolecule, firstAtom.radius + energyMaxRadiusDefault);
 
         secondMolecule->bvh.leavesIntersectingBoxDo(firstAtomBoundingBoxInSecondMolecule, [&](size_t secondAtomIndex){
             auto &secondAtom = secondMolecule->atomStates[secondAtomIndex];
             auto &secondAtomDesc = secondMolecule->atomDescriptions[secondAtomIndex];
-            auto secondAtomWorldPosition = secondMolecule->transform.transformPosition(secondAtom.position);
+            auto secondAtomWorldPosition = secondMolecule->transform.transformPosition(secondAtom.position.asVector3());
 
             auto deltaVector = firstAtomWorldPosition - secondAtomWorldPosition;
             auto deltaLength2 = deltaVector.length2();
@@ -995,8 +995,8 @@ void ContactPoint::computeNormalAndPenetrationDistance()
     auto &firstAtom = firstMolecule->atomStates[firstAtomIndex];
     auto &secondAtom = secondMolecule->atomStates[secondAtomIndex];
 
-    auto firstAtomWorldPosition = firstMolecule->transform.transformPosition(firstAtom.position);
-    auto secondAtomWorldPosition = secondMolecule->transform.transformPosition(secondMolecule->atomStates[secondAtomIndex].position);
+    auto firstAtomWorldPosition = firstMolecule->transform.transformPosition(firstAtom.position.asVector3());
+    auto secondAtomWorldPosition = secondMolecule->transform.transformPosition(secondMolecule->atomStates[secondAtomIndex].position.asVector3());
 
     auto deltaVector = firstAtomWorldPosition - secondAtomWorldPosition;
     auto totalRadius = firstAtom.radius + secondAtom.radius;

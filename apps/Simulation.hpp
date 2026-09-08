@@ -71,7 +71,7 @@ float sybyl_getEpsilon( Sybyl type );
 
 struct AtomRenderingState
 {
-    Vector3 position;
+    CompactVector3 position;
     float radius;
     Vector4 color;
 };
