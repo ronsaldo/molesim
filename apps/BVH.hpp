@@ -36,6 +36,7 @@ template<typename PT>
 struct BoundingVolumeHierarchyNode
 {
     bool isLeaf = false;
+    float surfaceArea = 0;
     AABox volume;
     std::shared_ptr<BoundingVolumeHierarchyNode<PT>> leftChild;
     std::shared_ptr<BoundingVolumeHierarchyNode<PT>> rightChild;
@@ -135,6 +136,66 @@ public:
         });
 
         constructBottomUpTopology(bvhLeaves);
+    }
+
+    void buildSAHTopDown(std::vector<NodePtrType> bvhLeaves)
+    {
+        rootNode = buildSAHTopDownNode(bvhLeaves);
+    }
+
+    NodePtrType buildSAHTopDownNode(std::vector<NodePtrType> bvhLeaves)
+    {
+        if(bvhLeaves.empty())
+            return nullptr;
+        else if(bvhLeaves.size() == 1)
+            return bvhLeaves.front();
+
+        // Compute the leaves bounding box.
+        auto bvhLeavesBoundingBox = AABox::Empty();
+        for(auto &leaf : bvhLeaves)
+            bvhLeavesBoundingBox.insertBox(leaf->volume);
+
+        // Compute the greatest axis.
+        auto bvhLeavesBoundingBoxExtent = bvhLeavesBoundingBox.extent();
+        auto greatestAxisValue = bvhLeavesBoundingBoxExtent.x;
+        auto greatestAxisIndex = 0;
+        for(int i = 0; i < 3; ++i )
+        {
+            if(bvhLeavesBoundingBoxExtent.elements[i] > greatestAxisValue)
+            {
+                greatestAxisValue = bvhLeavesBoundingBoxExtent.elements[i];
+                greatestAxisIndex = i;
+            }
+        }
+
+        // Sort the nodes along the greatest axis.
+        std::sort(bvhLeaves.begin(), bvhLeaves.end(), [&](const NodePtrType &a, const NodePtrType &b) {
+            auto leftCenter = a->volume.center();
+            auto rightCenter = a->volume.center();
+            return leftCenter.elements[greatestAxisIndex] < rightCenter.elements[greatestAxisIndex];
+        });
+
+        // TODO: Use the SAH
+        size_t splitIndex = bvhLeaves.size() / 2;
+
+        // Split the nodes along the index
+        std::vector<NodePtrType> leftNodes;
+        std::vector<NodePtrType> rightNodes;
+        for(size_t i = 0; i < bvhLeaves.size(); ++i)
+        {
+            if(i < splitIndex)
+                leftNodes.push_back(bvhLeaves[i]);
+            else
+                rightNodes.push_back(bvhLeaves[i]);
+        }
+
+        // Create the inner node.
+        auto innerNode = std::make_shared<NodeType> ();
+        innerNode->volume = bvhLeavesBoundingBox;
+        innerNode->surfaceArea = bvhLeavesBoundingBox.area();
+        innerNode->leftChild = buildSAHTopDownNode(leftNodes);
+        innerNode->rightChild = buildSAHTopDownNode(rightNodes);
+        return innerNode;
     }
 
     void constructBottomUpTopology(const std::vector<NodePtrType> &leaves)

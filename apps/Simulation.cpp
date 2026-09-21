@@ -339,6 +339,7 @@ void Molecule::computeLBVH()
         leaf->isLeaf = true;
         leaf->volume = volume;
         leaf->payload = i;
+        leaf->surfaceArea = volume.area();
         bvhLeaves.push_back(leaf);
     }
 
@@ -360,10 +361,11 @@ void Molecule::computeSAH_BVH()
         leaf->isLeaf = true;
         leaf->volume = volume;
         leaf->payload = i;
+        leaf->surfaceArea = volume.area();
         bvhLeaves.push_back(leaf);
     }
 
-    bvh.buildBottomUp(bvhLeaves);
+    bvh.buildSAHTopDown(bvhLeaves);
 }
 
 void Molecule::computeGrid()

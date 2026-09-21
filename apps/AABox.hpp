@@ -230,6 +230,12 @@ public:
         return positiveVertex(D);
     }
 
+    Scalar area() const
+    {
+        auto ex = extent();
+        return ex.x*ex.y*2 + ex.x*ex.z*2 + ex.y*ex.z*2;
+    }
+
     Vector3 minCorner;
     Vector3 maxCorner;
 };
