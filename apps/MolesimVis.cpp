@@ -43,7 +43,7 @@ public:
         bool debugLayerEnabled = false;
         agpu_uint platformIndex = 0;
         agpu_uint gpuIndex = 0;
-        SpatialSubdivisionAlgorithm spatialSubdivisionAlgorithm = SpatialSubdivisionAlgorithm::BVH;
+        SpatialSubdivisionAlgorithm spatialSubdivisionAlgorithm = SpatialSubdivisionAlgorithm::SAH_BVH;
         size_t randomAtomCount = 0;
 
         for(int i = 1; i < argc; ++i)
@@ -93,9 +93,13 @@ public:
                 {
                     spatialSubdivisionAlgorithm = SpatialSubdivisionAlgorithm::Octree;
                 }
-                else if(!strcmp(arg, "-bvh"))
+                else if(!strcmp(arg, "-sah-bvh"))
                 {
-                    spatialSubdivisionAlgorithm = SpatialSubdivisionAlgorithm::BVH;
+                    spatialSubdivisionAlgorithm = SpatialSubdivisionAlgorithm::SAH_BVH;
+                }
+                else if(!strcmp(arg, "-lbvh"))
+                {
+                    spatialSubdivisionAlgorithm = SpatialSubdivisionAlgorithm::LBVH;
                 }
                 else if(!strcmp(arg, "-random-atoms"))
                 {

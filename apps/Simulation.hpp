@@ -34,7 +34,8 @@ enum class SpatialSubdivisionAlgorithm
     Grid,
     KDTree,
     Octree,
-    BVH
+    LBVH,
+    SAH_BVH
 };
 
 const char *spatialSubdivisionAlgorithmToString(SpatialSubdivisionAlgorithm algorithm);
@@ -168,7 +169,8 @@ struct Molecule
     void computeBoundingBox();
     void computeInertiaTensor();
     void updateWorldInertiaTensor();
-    void computeBVH();
+    void computeLBVH();
+    void computeSAH_BVH();
     void computeKDTree();
     void computeOctree();
     void computeGrid();
@@ -248,7 +250,7 @@ struct Simulation
     std::vector<ContactPoint> contactPoints;
 
     Scalar restingContactVelocityLimit = 0.1f;
-    SpatialSubdivisionAlgorithm spatialSubdivisionAlgorithm = SpatialSubdivisionAlgorithm::BVH;
+    SpatialSubdivisionAlgorithm spatialSubdivisionAlgorithm = SpatialSubdivisionAlgorithm::SAH_BVH;
     size_t simulationMoleculeIndex = 0;
     size_t optimizationStepCount = 1;
 

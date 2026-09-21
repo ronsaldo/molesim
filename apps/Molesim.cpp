@@ -18,7 +18,7 @@ void printVersion()
 int main(int argc, const char **argv)
 {
     std::vector<std::string> moleculeFileNames;
-    SpatialSubdivisionAlgorithm spatialSubdivisionAlgorithm = SpatialSubdivisionAlgorithm::BVH;
+    SpatialSubdivisionAlgorithm spatialSubdivisionAlgorithm = SpatialSubdivisionAlgorithm::SAH_BVH;
     size_t simulationIterationCount = 1000;
     bool performEnergyOptimizations = false;
     size_t randomAtomCount = 0;
@@ -62,9 +62,13 @@ int main(int argc, const char **argv)
             {
                 spatialSubdivisionAlgorithm = SpatialSubdivisionAlgorithm::Octree;
             }
-            else if(!strcmp(arg, "-bvh"))
+            else if(!strcmp(arg, "-sah-bvh"))
             {
-                spatialSubdivisionAlgorithm = SpatialSubdivisionAlgorithm::BVH;
+                spatialSubdivisionAlgorithm = SpatialSubdivisionAlgorithm::SAH_BVH;
+            }
+            else if(!strcmp(arg, "-lbvh"))
+            {
+                spatialSubdivisionAlgorithm = SpatialSubdivisionAlgorithm::LBVH;
             }
             else if(!strcmp(arg, "-random-atoms"))
             {

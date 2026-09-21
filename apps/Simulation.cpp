@@ -17,7 +17,8 @@ const char *spatialSubdivisionAlgorithmToString(SpatialSubdivisionAlgorithm algo
     case SpatialSubdivisionAlgorithm::Grid:   return "Grid";
     case SpatialSubdivisionAlgorithm::KDTree: return "KDTree";
     case SpatialSubdivisionAlgorithm::Octree: return "Octree";
-    case SpatialSubdivisionAlgorithm::BVH:    return "BVH";
+    case SpatialSubdivisionAlgorithm::LBVH:    return "LBVH";
+    case SpatialSubdivisionAlgorithm::SAH_BVH:    return "SAH BVH";
     default: abort();
     }
 }
@@ -323,7 +324,28 @@ void Molecule::updateWorldInertiaTensor()
 	worldInverseInertiaTensor = rotationMatrix * inverseInertiaTensor * transposedRotationMatrix;
 }
 
-void Molecule::computeBVH()
+void Molecule::computeLBVH()
+{
+    std::vector<MoleculeBVH::NodePtrType> bvhLeaves;
+    bvhLeaves.reserve(atomStates.size());
+
+    for(size_t i = 0; i < atomStates.size(); ++i)
+    {
+        auto center = atomStates[i].position.asVector3();
+        auto radius = atomStates[i].radius;
+        auto volume = AABox::ForSphere(center, radius);
+
+        auto leaf = std::make_shared<MoleculeBVH::NodeType> ();
+        leaf->isLeaf = true;
+        leaf->volume = volume;
+        leaf->payload = i;
+        bvhLeaves.push_back(leaf);
+    }
+
+    bvh.buildBottomUp(bvhLeaves);
+}
+
+void Molecule::computeSAH_BVH()
 {
     std::vector<MoleculeBVH::NodePtrType> bvhLeaves;
     bvhLeaves.reserve(atomStates.size());
@@ -402,8 +424,11 @@ void Molecule::prepareForSimulation(SpatialSubdivisionAlgorithm spatialSubdivisi
     case SpatialSubdivisionAlgorithm::Octree:
         computeOctree();
         break;
-    case SpatialSubdivisionAlgorithm::BVH:
-        computeBVH();
+    case SpatialSubdivisionAlgorithm::LBVH:
+        computeLBVH();
+        break;
+    case SpatialSubdivisionAlgorithm::SAH_BVH:
+        computeSAH_BVH();
         break;
     }
 }
@@ -696,7 +721,8 @@ void Simulation::computePairNarrowPhase(const MoleculePtr &firstMolecule, const 
     case SpatialSubdivisionAlgorithm::Octree:
         computeOctreePairNarrowPhase(firstMolecule, secondMolecule);
         break;
-    case SpatialSubdivisionAlgorithm::BVH:
+    case SpatialSubdivisionAlgorithm::LBVH:
+    case SpatialSubdivisionAlgorithm::SAH_BVH:
         computeBVHPairNarrowPhase(firstMolecule, secondMolecule);
         break;
     default:
@@ -834,7 +860,8 @@ Scalar Simulation::computePairEnergy(const MoleculePtr &firstMolecule, const Mol
         return computeKDTreePairEnergy(firstMolecule, secondMolecule);
     case SpatialSubdivisionAlgorithm::Octree:
         return computeOctreePairEnergy(firstMolecule, secondMolecule);
-    case SpatialSubdivisionAlgorithm::BVH:
+    case SpatialSubdivisionAlgorithm::LBVH:
+    case SpatialSubdivisionAlgorithm::SAH_BVH:
         return computeBVHPairEnergy(firstMolecule, secondMolecule);
     default:
         abort();
