@@ -175,19 +175,14 @@ public:
             return leftCenter.elements[greatestAxisIndex] < rightCenter.elements[greatestAxisIndex];
         });
 
-        // TODO: Use the SAH
-        size_t splitIndex = bvhLeaves.size() / 2;
+        // Use the SAH
+        size_t splitIndex = computeSAHSplitIndex(bvhLeaves, bvhLeavesBoundingBox.area());
+        //printf("%zu split index %zu\n", bvhLeaves.size(), splitIndex);
 
-        // Split the nodes along the index
-        std::vector<NodePtrType> leftNodes;
-        std::vector<NodePtrType> rightNodes;
-        for(size_t i = 0; i < bvhLeaves.size(); ++i)
-        {
-            if(i < splitIndex)
-                leftNodes.push_back(bvhLeaves[i]);
-            else
-                rightNodes.push_back(bvhLeaves[i]);
-        }
+        // Split the nodes along the selected index.
+        std::vector<NodePtrType> leftNodes = std::vector<NodePtrType>(bvhLeaves.begin(), bvhLeaves.begin() + splitIndex);
+        std::vector<NodePtrType> rightNodes = std::vector<NodePtrType>(bvhLeaves.begin() + splitIndex, bvhLeaves.end());
+        assert(leftNodes.size() + rightNodes.size() == bvhLeaves.size());
 
         // Create the inner node.
         auto innerNode = std::make_shared<NodeType> ();
@@ -196,6 +191,52 @@ public:
         innerNode->leftChild = buildSAHTopDownNode(leftNodes);
         innerNode->rightChild = buildSAHTopDownNode(rightNodes);
         return innerNode;
+    }
+
+    Scalar computeSAHSplitCost(const std::vector<NodePtrType> &bvhLeaves, Scalar totalArea, size_t splitIndex)
+    {
+        Scalar leftArea = 0;
+        size_t leftLeaves = 0;
+        Scalar rightArea = 0;
+        size_t rightLeaves = 0;
+        for(size_t i = 0; i < bvhLeaves.size(); ++i)
+        {
+            Scalar leafArea = bvhLeaves[i]->surfaceArea;
+            if(i < splitIndex)
+            {
+                leftArea += leafArea;
+                ++leftLeaves;
+            }
+            else
+            {
+                rightArea += leafArea;
+                ++rightLeaves;
+            }
+        }
+        return leftArea / totalArea * leftLeaves + rightArea / totalArea * rightLeaves;
+    }
+
+    size_t computeSAHSplitIndex(const std::vector<NodePtrType> &bvhLeaves, Scalar totalArea)
+    {
+        // If small or greater, split in the middle.
+        if(bvhLeaves.size() <= 2 || bvhLeaves.size() >= 1000)
+            return bvhLeaves.size() / 2;
+
+        // Make sure we start with at least one.
+        size_t bestSplitIndex = 1;
+        Scalar bestSplitIndexCost = ScalarPositiveInfinity;
+        for(size_t i = 1; i < bvhLeaves.size(); ++i)
+        {
+            Scalar cost = computeSAHSplitCost(bvhLeaves, totalArea, i);
+            if(cost < bestSplitIndexCost)
+            {
+                bestSplitIndex = i;
+                bestSplitIndexCost = cost;
+            }
+        }
+
+        //printf("%f split index %zu\n", bestSplitIndexCost, bestSplitIndex);
+        return bestSplitIndex;
     }
 
     void constructBottomUpTopology(const std::vector<NodePtrType> &leaves)

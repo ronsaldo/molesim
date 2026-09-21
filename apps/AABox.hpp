@@ -233,7 +233,7 @@ public:
     Scalar area() const
     {
         auto ex = extent();
-        return ex.x*ex.y*2 + ex.x*ex.z*2 + ex.y*ex.z*2;
+        return 2*(ex.x*ex.y + ex.x*ex.z + ex.y*ex.z);
     }
 
     Vector3 minCorner;
