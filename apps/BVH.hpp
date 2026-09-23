@@ -177,6 +177,7 @@ public:
 
         // Use the SAH
         size_t splitIndex = computeSAHSplitIndex(bvhLeaves, bvhLeavesBoundingBox.area());
+        //printf("greatestAxisIndex %d split %zu\n", greatestAxisIndex, splitIndex);
         //printf("%zu split index %zu\n", bvhLeaves.size(), splitIndex);
 
         // Split the nodes along the selected index.

@@ -44,7 +44,7 @@ std::pair<double, double> benchmarkAlgorithmWithSize(SpatialSubdivisionAlgorithm
     auto simulation = std::make_shared<Simulation> ();
     simulation->spatialSubdivisionAlgorithm = algorithm;
     simulation->createMoleculesWithRandomAtoms(size);
-
+    printf("Benchmark with size %d\n", size);
     for(size_t i = 0; i < SimulationIterationCount; ++i)
     {
         const auto SimulationTimeStep = 1.0f / 60.0f;
