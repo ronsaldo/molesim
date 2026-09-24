@@ -97,9 +97,9 @@ public:
                 {
                     spatialSubdivisionAlgorithm = SpatialSubdivisionAlgorithm::SAH_BVH;
                 }
-                else if(!strcmp(arg, "-lbvh"))
+                else if(!strcmp(arg, "-BottomUp_LBVH"))
                 {
-                    spatialSubdivisionAlgorithm = SpatialSubdivisionAlgorithm::LBVH;
+                    spatialSubdivisionAlgorithm = SpatialSubdivisionAlgorithm::BottomUp_LBVH;
                 }
                 else if(!strcmp(arg, "-random-atoms"))
                 {

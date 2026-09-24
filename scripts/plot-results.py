@@ -33,14 +33,14 @@ with open(benchmarkResultsFileName, 'r') as f:
     gridMeasurements = parseAverageAndStd(lines[3], lines[4])
     kdTreeMeasurements = parseAverageAndStd(lines[5], lines[6])
     octreeMeasurements = parseAverageAndStd(lines[7], lines[8])
-    lbvhMeasurements = parseAverageAndStd(lines[9], lines[10])
+    BottomUp_LBVHMeasurements = parseAverageAndStd(lines[9], lines[10])
     sahBvhMeasurements = parseAverageAndStd(lines[11], lines[12])
 
     naiveMeasurements.plot(Ns)
     gridMeasurements.plot(Ns)
     kdTreeMeasurements.plot(Ns)
     octreeMeasurements.plot(Ns)
-    lbvhMeasurements.plot(Ns)
+    BottomUp_LBVHMeasurements.plot(Ns)
     sahBvhMeasurements.plot(Ns)
 
 plt.legend()

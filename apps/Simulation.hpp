@@ -34,7 +34,8 @@ enum class SpatialSubdivisionAlgorithm
     Grid,
     KDTree,
     Octree,
-    LBVH,
+    BottomUp_LBVH,
+    TopDown_LBVH,
     SAH_BVH
 };
 
@@ -169,7 +170,8 @@ struct Molecule
     void computeBoundingBox();
     void computeInertiaTensor();
     void updateWorldInertiaTensor();
-    void computeLBVH();
+    void computeBottomUp_LBVH();
+    void computeTopDown_LBVH();
     void computeSAH_BVH();
     void computeKDTree();
     void computeOctree();
