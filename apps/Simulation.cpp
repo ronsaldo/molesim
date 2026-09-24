@@ -408,7 +408,9 @@ void Molecule::computeOctree()
     for(size_t i = 0; i < atomStates.size(); ++i)
     {
         auto center = atomStates[i].position.asVector3();
-        auto entry = MoleculeOctree::EntryType(center, i);
+        auto radius = atomStates[i].radius;
+        auto volume = AABox::ForSphere(center, radius);
+        auto entry = MoleculeOctree::EntryType(volume, i);
         entries.push_back(entry);
     }
 

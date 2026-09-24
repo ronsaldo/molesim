@@ -14,10 +14,10 @@ struct OctreeEntry
 {
     typedef PT PayloadType;
     OctreeEntry() = default;
-    OctreeEntry(const Vector3 &initPoint, const PayloadType &initPayload)
-        : point(initPoint), payload(initPayload) {}
+    OctreeEntry(const AABox &initVolume, const PayloadType &initPayload)
+        : volume(initVolume), payload(initPayload) {}
 
-    Vector3 point;
+    AABox volume;
     PayloadType payload;
 };
 
@@ -68,11 +68,8 @@ struct OctreeNode
         for(int i = 0; i < 8; ++i)
         {
             auto &child = children[i];
-            if(child->boundingBox.containsPoint(entry.point))
-            {
+            if(child->boundingBox.hasIntersectionWithBox(entry.volume))
                 child->addEntry(entry);
-                break;
-            }
         }
     }
 
@@ -143,6 +140,8 @@ struct Octree
     typedef OctreeEntry<PT> EntryType;
     typedef OctreeNode<PT> NodeType;
 
+    typedef PT PayloadType;
+
     void setupForBoundingBox(const AABox &boundingBox)
     {
         rootNode = std::make_shared<NodeType> ();
@@ -163,7 +162,14 @@ struct Octree
     template<typename FT>
     void nodesIntersectingBoxDo(const AABox &box, FT &&aBlock)
     {
-        rootNode->nodesIntersectingBoxDo(box, aBlock);
+        std::unordered_set<PayloadType> visitedElements;
+        rootNode->nodesIntersectingBoxDo(box, [&](const PayloadType &payload){
+            if(visitedElements.find(payload) != visitedElements.end())
+                return;
+
+            visitedElements.insert(payload);
+            aBlock(payload);
+        });
     }
 
     std::shared_ptr<NodeType> rootNode;
