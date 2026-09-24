@@ -56,8 +56,10 @@ struct BoundingVolumeHierarchyNode
         }
         else
         {
-            leftChild->leavesIntersectingBoxDo(box, aBlock);
-            rightChild->leavesIntersectingBoxDo(box, aBlock);
+            if(leftChild)
+                leftChild->leavesIntersectingBoxDo(box, aBlock);
+            if(rightChild)
+                rightChild->leavesIntersectingBoxDo(box, aBlock);
         }
     }
 
@@ -73,8 +75,11 @@ struct BoundingVolumeHierarchyNode
         }
         else
         {
-            leftChild->leavesIntersectingRayDo(ray, aBlock);
-            rightChild->leavesIntersectingRayDo(ray, aBlock);
+            if(leftChild)
+                leftChild->leavesIntersectingRayDo(ray, aBlock);
+
+            if(rightChild)
+                rightChild->leavesIntersectingRayDo(ray, aBlock);
         }
     }
 };
