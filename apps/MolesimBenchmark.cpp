@@ -29,13 +29,13 @@ static bool PerformEnergyOptimization = false;
 
 
 static SpatialSubdivisionAlgorithm SpatialSubdivisionAlgorithms[] = {
-    //SpatialSubdivisionAlgorithm::Naive,
-    //SpatialSubdivisionAlgorithm::Grid,
-    //SpatialSubdivisionAlgorithm::KDTree,
+    SpatialSubdivisionAlgorithm::Naive,
+    SpatialSubdivisionAlgorithm::Grid,
+    SpatialSubdivisionAlgorithm::KDTree,
     SpatialSubdivisionAlgorithm::Octree,
-    //SpatialSubdivisionAlgorithm::BottomUp_LBVH,
-    //SpatialSubdivisionAlgorithm::TopDown_LBVH,
-    //SpatialSubdivisionAlgorithm::SAH_BVH
+    SpatialSubdivisionAlgorithm::BottomUp_LBVH,
+    SpatialSubdivisionAlgorithm::TopDown_LBVH,
+    SpatialSubdivisionAlgorithm::SAH_BVH
 };
 
 std::pair<double, double> benchmarkAlgorithmWithSize(SpatialSubdivisionAlgorithm algorithm, int size)
