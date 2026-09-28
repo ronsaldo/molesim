@@ -36,6 +36,7 @@ with open(benchmarkResultsFileName, 'r') as f:
     bottomUp_LBVHMeasurements = parseAverageAndStd(lines[9], lines[10])
     topDown_LBVHMeasurements = parseAverageAndStd(lines[11], lines[12])
     sahBvhMeasurements = parseAverageAndStd(lines[13], lines[14])
+    hybridMeasurements = parseAverageAndStd(lines[15], lines[16])
 
     naiveMeasurements.plot(Ns)
     gridMeasurements.plot(Ns)
@@ -44,6 +45,7 @@ with open(benchmarkResultsFileName, 'r') as f:
     bottomUp_LBVHMeasurements.plot(Ns)
     topDown_LBVHMeasurements.plot(Ns)
     sahBvhMeasurements.plot(Ns)
+    hybridMeasurements.plot(Ns)
 
 plt.legend()
 plt.show()
