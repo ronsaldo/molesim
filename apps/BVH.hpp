@@ -143,7 +143,7 @@ public:
         constructBottomUpTopology(bvhLeaves);
     }
 
-    void buildBottomUp(std::vector<NodePtrType> bvhLeaves)
+    void buildBottomUp_LBVH(std::vector<NodePtrType> bvhLeaves)
     {
         sortWithMortonCode(bvhLeaves);
         constructBottomUpTopology(bvhLeaves);
@@ -154,6 +154,45 @@ public:
         sortWithMortonCode(bvhLeaves);
         rootNode = buildLBVHTopDownNode(bvhLeaves);
 
+    }
+
+    void buildHybridTopDown(std::vector<NodePtrType> bvhLeaves)
+    {
+        sortWithMortonCode(bvhLeaves);
+        rootNode = buildHybridSAHTopDownNode(bvhLeaves);
+
+    }
+
+    NodePtrType buildHybridSAHTopDownNode(std::vector<NodePtrType> bvhLeaves)
+    {
+        if(bvhLeaves.empty())
+            return nullptr;
+        else if(bvhLeaves.size() == 1)
+            return bvhLeaves.front();
+
+        // Compute the leaves bounding box.
+        auto bvhLeavesBoundingBox = AABox::Empty();
+        for(auto &leaf : bvhLeaves)
+            bvhLeavesBoundingBox.insertBox(leaf->volume);
+
+        // Use the SAH
+        size_t splitIndex = computeSAHSplitIndex(bvhLeaves, bvhLeavesBoundingBox.area());
+        //printf("greatestAxisIndex %d split %zu\n", greatestAxisIndex, splitIndex);
+        //printf("%zu split index %zu\n", bvhLeaves.size(), splitIndex);
+
+        // Split the nodes along the selected index.
+        std::vector<NodePtrType> leftNodes = std::vector<NodePtrType>(bvhLeaves.begin(), bvhLeaves.begin() + splitIndex);
+        std::vector<NodePtrType> rightNodes = std::vector<NodePtrType>(bvhLeaves.begin() + splitIndex, bvhLeaves.end());
+        assert(leftNodes.size() + rightNodes.size() == bvhLeaves.size());
+        //printf("%zu left %zu right %zu\n", bvhLeaves.size(), leftNodes.size(), rightNodes.size());
+
+        // Create the inner node.
+        auto innerNode = std::make_shared<NodeType> ();
+        innerNode->volume = bvhLeavesBoundingBox;
+        innerNode->surfaceArea = bvhLeavesBoundingBox.area();
+        innerNode->leftChild = buildHybridSAHTopDownNode(leftNodes);
+        innerNode->rightChild = buildHybridSAHTopDownNode(rightNodes);
+        return innerNode;
     }
 
     NodePtrType buildLBVHTopDownNode(const std::vector<NodePtrType> &bvhLeaves)

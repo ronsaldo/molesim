@@ -36,7 +36,8 @@ enum class SpatialSubdivisionAlgorithm
     Octree,
     BottomUp_LBVH,
     TopDown_LBVH,
-    SAH_BVH
+    SAH_BVH,
+    HybridBVH
 };
 
 const char *spatialSubdivisionAlgorithmToString(SpatialSubdivisionAlgorithm algorithm);
@@ -173,6 +174,7 @@ struct Molecule
     void computeBottomUp_LBVH();
     void computeTopDown_LBVH();
     void computeSAH_BVH();
+    void computeHybridBVH();
     void computeKDTree();
     void computeOctree();
     void computeGrid();

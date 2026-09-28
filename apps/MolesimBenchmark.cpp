@@ -35,7 +35,8 @@ static SpatialSubdivisionAlgorithm SpatialSubdivisionAlgorithms[] = {
     SpatialSubdivisionAlgorithm::Octree,
     SpatialSubdivisionAlgorithm::BottomUp_LBVH,
     SpatialSubdivisionAlgorithm::TopDown_LBVH,
-    SpatialSubdivisionAlgorithm::SAH_BVH
+    SpatialSubdivisionAlgorithm::SAH_BVH,
+    SpatialSubdivisionAlgorithm::HybridBVH
 };
 
 std::pair<double, double> benchmarkAlgorithmWithSize(SpatialSubdivisionAlgorithm algorithm, int size)

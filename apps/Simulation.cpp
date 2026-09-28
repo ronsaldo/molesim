@@ -13,13 +13,14 @@ const char *spatialSubdivisionAlgorithmToString(SpatialSubdivisionAlgorithm algo
 {
     switch(algorithm)
     {
-    case SpatialSubdivisionAlgorithm::Naive:  return "Naive";
-    case SpatialSubdivisionAlgorithm::Grid:   return "Grid";
-    case SpatialSubdivisionAlgorithm::KDTree: return "KDTree";
-    case SpatialSubdivisionAlgorithm::Octree: return "Octree";
-    case SpatialSubdivisionAlgorithm::BottomUp_LBVH:    return "BottomUp LBVH";
-    case SpatialSubdivisionAlgorithm::TopDown_LBVH:    return "TopDown LBVH";
-    case SpatialSubdivisionAlgorithm::SAH_BVH:    return "SAH BVH";
+    case SpatialSubdivisionAlgorithm::Naive:         return "Naive";
+    case SpatialSubdivisionAlgorithm::Grid:          return "Grid";
+    case SpatialSubdivisionAlgorithm::KDTree:        return "KDTree";
+    case SpatialSubdivisionAlgorithm::Octree:        return "Octree";
+    case SpatialSubdivisionAlgorithm::BottomUp_LBVH: return "BottomUp LBVH";
+    case SpatialSubdivisionAlgorithm::TopDown_LBVH:  return "TopDown LBVH";
+    case SpatialSubdivisionAlgorithm::SAH_BVH:       return "SAH BVH";
+    case SpatialSubdivisionAlgorithm::HybridBVH:     return "Hybrid BVH";
     default: abort();
     }
 }
@@ -344,7 +345,7 @@ void Molecule::computeBottomUp_LBVH()
         bvhLeaves.push_back(leaf);
     }
 
-    bvh.buildBottomUp(bvhLeaves);
+    bvh.buildBottomUp_LBVH(bvhLeaves);
 }
 
 void Molecule::computeTopDown_LBVH()
@@ -389,6 +390,28 @@ void Molecule::computeSAH_BVH()
     }
 
     bvh.buildSAHTopDown(bvhLeaves);
+}
+
+void Molecule::computeHybridBVH()
+{
+    std::vector<MoleculeBVH::NodePtrType> bvhLeaves;
+    bvhLeaves.reserve(atomStates.size());
+
+    for(size_t i = 0; i < atomStates.size(); ++i)
+    {
+        auto center = atomStates[i].position.asVector3();
+        auto radius = atomStates[i].radius;
+        auto volume = AABox::ForSphere(center, radius);
+
+        auto leaf = std::make_shared<MoleculeBVH::NodeType> ();
+        leaf->isLeaf = true;
+        leaf->volume = volume;
+        leaf->payload = i;
+        leaf->surfaceArea = volume.area();
+        bvhLeaves.push_back(leaf);
+    }
+
+    bvh.buildHybridTopDown(bvhLeaves);
 }
 
 void Molecule::computeGrid()
@@ -459,6 +482,9 @@ void Molecule::prepareForSimulation(SpatialSubdivisionAlgorithm spatialSubdivisi
         break;
     case SpatialSubdivisionAlgorithm::SAH_BVH:
         computeSAH_BVH();
+        break;
+    case SpatialSubdivisionAlgorithm::HybridBVH:
+        computeHybridBVH();
         break;
     }
 }
@@ -754,6 +780,7 @@ void Simulation::computePairNarrowPhase(const MoleculePtr &firstMolecule, const 
     case SpatialSubdivisionAlgorithm::BottomUp_LBVH:
     case SpatialSubdivisionAlgorithm::TopDown_LBVH:
     case SpatialSubdivisionAlgorithm::SAH_BVH:
+    case SpatialSubdivisionAlgorithm::HybridBVH:
         computeBVHPairNarrowPhase(firstMolecule, secondMolecule);
         break;
     default:
@@ -894,6 +921,7 @@ Scalar Simulation::computePairEnergy(const MoleculePtr &firstMolecule, const Mol
     case SpatialSubdivisionAlgorithm::BottomUp_LBVH:
     case SpatialSubdivisionAlgorithm::TopDown_LBVH:
     case SpatialSubdivisionAlgorithm::SAH_BVH:
+    case SpatialSubdivisionAlgorithm::HybridBVH:
         return computeBVHPairEnergy(firstMolecule, secondMolecule);
     default:
         abort();
