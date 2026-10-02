@@ -666,11 +666,11 @@ void Simulation::clear()
 void Simulation::createMoleculesWithRandomAtoms(size_t totalCount)
 {
     size_t halfCount = totalCount/2;
-    createMoleculeWithRandomAtoms(halfCount);
-    createMoleculeWithRandomAtoms(halfCount);
+    createMoleculeWithRandomAtoms(halfCount, 0);
+    createMoleculeWithRandomAtoms(halfCount, 1);
 }
 
-void Simulation::createMoleculeWithRandomAtoms(size_t atomCount)
+void Simulation::createMoleculeWithRandomAtoms(size_t atomCount, size_t moleculeIndex)
 {
     if(atomCount == 0)
         return;
@@ -689,8 +689,11 @@ void Simulation::createMoleculeWithRandomAtoms(size_t atomCount)
 
         AtomRenderingState atomState;
         atomState.position = nextRandomVector(minCoordinate, maxCoordinate);
-        atomState.radius = 1.0;
-        atomState.color = Vector4(0.8f, 0.1f, 0.1f, 1.0f);
+        atomState.radius = nextRandomScalar(1, 3);
+        if(moleculeIndex == 0)
+            atomState.color = Vector4(0.8f, 0.1f, 0.1f, 1.0f);
+        else
+            atomState.color = Vector4(0.8f, 0.8f, 0.1f, 1.0f);
         molecule->atomStates.push_back(atomState);
     }
 

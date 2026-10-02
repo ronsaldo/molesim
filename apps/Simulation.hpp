@@ -194,7 +194,7 @@ struct Simulation
 
     void clear();
     void createMoleculesWithRandomAtoms(size_t totalCount);
-    void createMoleculeWithRandomAtoms(size_t atomCount);
+    void createMoleculeWithRandomAtoms(size_t atomCount, size_t moleculeIndex);
 
     void resetNetForces();
     void evaluateForceGenerators(float deltaTime);
