@@ -18,7 +18,7 @@ void printVersion()
 int main(int argc, const char **argv)
 {
     std::vector<std::string> moleculeFileNames;
-    SpatialSubdivisionAlgorithm spatialSubdivisionAlgorithm = SpatialSubdivisionAlgorithm::BottomUp_LBVH;
+    SpatialSubdivisionAlgorithm spatialSubdivisionAlgorithm = SpatialSubdivisionAlgorithm::HybridBVH;
     size_t simulationIterationCount = 1000;
     bool performEnergyOptimizations = false;
     size_t randomAtomCount = 0;
