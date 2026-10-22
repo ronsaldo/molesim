@@ -307,7 +307,6 @@ public:
 
     size_t computeSAHSplitIndex(const std::vector<NodePtrType> &bvhLeaves, Scalar totalArea)
     {
-        return bvhLeaves.size() / 2;
         // If small or greater, split in the middle.
         if(bvhLeaves.size() <= 2 || bvhLeaves.size() >= 1000)
             return bvhLeaves.size() / 2;
