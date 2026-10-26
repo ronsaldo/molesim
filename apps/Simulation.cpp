@@ -20,7 +20,7 @@ const char *spatialSubdivisionAlgorithmToString(SpatialSubdivisionAlgorithm algo
     case SpatialSubdivisionAlgorithm::BottomUp_LBVH: return "BottomUp LBVH";
     case SpatialSubdivisionAlgorithm::TopDown_LBVH:  return "TopDown LBVH";
     case SpatialSubdivisionAlgorithm::SAH_BVH:       return "SAH BVH";
-    case SpatialSubdivisionAlgorithm::SAH_HLBVH:     return "SAH_HLBVH";
+    case SpatialSubdivisionAlgorithm::SAH_HLBVH:     return "SAH HLBVH";
     default: abort();
     }
 }
