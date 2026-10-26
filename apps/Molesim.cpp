@@ -68,7 +68,7 @@ int main(int argc, const char **argv)
             }
             else if(!strcmp(arg, "-hybrid-bvh"))
             {
-                spatialSubdivisionAlgorithm = SpatialSubdivisionAlgorithm::HybridBVH;
+                spatialSubdivisionAlgorithm = SpatialSubdivisionAlgorithm::HLBVH;
             }
             else if(!strcmp(arg, "-bottom-up-lbvh"))
             {

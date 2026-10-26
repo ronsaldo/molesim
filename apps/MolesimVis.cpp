@@ -43,7 +43,7 @@ public:
         bool debugLayerEnabled = false;
         agpu_uint platformIndex = 0;
         agpu_uint gpuIndex = 0;
-        SpatialSubdivisionAlgorithm spatialSubdivisionAlgorithm = SpatialSubdivisionAlgorithm::HybridBVH;
+        SpatialSubdivisionAlgorithm spatialSubdivisionAlgorithm = SpatialSubdivisionAlgorithm::HLBVH;
         size_t randomAtomCount = 0;
 
         for(int i = 1; i < argc; ++i)
@@ -99,7 +99,7 @@ public:
                 }
                 else if(!strcmp(arg, "-hybrid-bvh"))
                 {
-                    spatialSubdivisionAlgorithm = SpatialSubdivisionAlgorithm::HybridBVH;
+                    spatialSubdivisionAlgorithm = SpatialSubdivisionAlgorithm::HLBVH;
                 }
                 else if(!strcmp(arg, "-bottom-up-lbvh"))
                 {
