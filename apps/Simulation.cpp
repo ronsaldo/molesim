@@ -20,7 +20,7 @@ const char *spatialSubdivisionAlgorithmToString(SpatialSubdivisionAlgorithm algo
     case SpatialSubdivisionAlgorithm::BottomUp_LBVH: return "BottomUp LBVH";
     case SpatialSubdivisionAlgorithm::TopDown_LBVH:  return "TopDown LBVH";
     case SpatialSubdivisionAlgorithm::SAH_BVH:       return "SAH BVH";
-    case SpatialSubdivisionAlgorithm::HLBVH:         return "HLBVH";
+    case SpatialSubdivisionAlgorithm::SAH_HLBVH:     return "SAH_HLBVH";
     default: abort();
     }
 }
@@ -392,7 +392,7 @@ void Molecule::computeSAH_BVH()
     bvh.buildSAHTopDown(bvhLeaves);
 }
 
-void Molecule::computeHLBVH()
+void Molecule::computeSAH_HLBVH()
 {
     std::vector<MoleculeBVH::NodePtrType> bvhLeaves;
     bvhLeaves.reserve(atomStates.size());
@@ -483,8 +483,8 @@ void Molecule::prepareForSimulation(SpatialSubdivisionAlgorithm spatialSubdivisi
     case SpatialSubdivisionAlgorithm::SAH_BVH:
         computeSAH_BVH();
         break;
-    case SpatialSubdivisionAlgorithm::HLBVH:
-        computeHLBVH();
+    case SpatialSubdivisionAlgorithm::SAH_HLBVH:
+        computeSAH_HLBVH();
         break;
     }
 }
@@ -783,7 +783,7 @@ void Simulation::computePairNarrowPhase(const MoleculePtr &firstMolecule, const 
     case SpatialSubdivisionAlgorithm::BottomUp_LBVH:
     case SpatialSubdivisionAlgorithm::TopDown_LBVH:
     case SpatialSubdivisionAlgorithm::SAH_BVH:
-    case SpatialSubdivisionAlgorithm::HLBVH:
+    case SpatialSubdivisionAlgorithm::SAH_HLBVH:
         computeBVHPairNarrowPhase(firstMolecule, secondMolecule);
         break;
     default:
@@ -924,7 +924,7 @@ Scalar Simulation::computePairEnergy(const MoleculePtr &firstMolecule, const Mol
     case SpatialSubdivisionAlgorithm::BottomUp_LBVH:
     case SpatialSubdivisionAlgorithm::TopDown_LBVH:
     case SpatialSubdivisionAlgorithm::SAH_BVH:
-    case SpatialSubdivisionAlgorithm::HLBVH:
+    case SpatialSubdivisionAlgorithm::SAH_HLBVH:
         return computeBVHPairEnergy(firstMolecule, secondMolecule);
     default:
         abort();

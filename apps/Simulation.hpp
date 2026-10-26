@@ -37,7 +37,7 @@ enum class SpatialSubdivisionAlgorithm
     BottomUp_LBVH,
     TopDown_LBVH,
     SAH_BVH,
-    HLBVH
+    SAH_HLBVH
 };
 
 const char *spatialSubdivisionAlgorithmToString(SpatialSubdivisionAlgorithm algorithm);
@@ -174,7 +174,7 @@ struct Molecule
     void computeBottomUp_LBVH();
     void computeTopDown_LBVH();
     void computeSAH_BVH();
-    void computeHLBVH();
+    void computeSAH_HLBVH();
     void computeKDTree();
     void computeOctree();
     void computeGrid();
@@ -254,7 +254,7 @@ struct Simulation
     std::vector<ContactPoint> contactPoints;
 
     Scalar restingContactVelocityLimit = 0.1f;
-    SpatialSubdivisionAlgorithm spatialSubdivisionAlgorithm = SpatialSubdivisionAlgorithm::HybridBVH;
+    SpatialSubdivisionAlgorithm spatialSubdivisionAlgorithm = SpatialSubdivisionAlgorithm::SAH_HLBVH;
     size_t simulationMoleculeIndex = 0;
     size_t optimizationStepCount = 1;
 
