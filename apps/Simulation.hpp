@@ -254,7 +254,7 @@ struct Simulation
     std::vector<ContactPoint> contactPoints;
 
     Scalar restingContactVelocityLimit = 0.1f;
-    SpatialSubdivisionAlgorithm spatialSubdivisionAlgorithm = SpatialSubdivisionAlgorithm::SAH_BVH;
+    SpatialSubdivisionAlgorithm spatialSubdivisionAlgorithm = SpatialSubdivisionAlgorithm::HybridBVH;
     size_t simulationMoleculeIndex = 0;
     size_t optimizationStepCount = 1;
 
