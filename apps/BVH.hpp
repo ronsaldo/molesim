@@ -216,8 +216,8 @@ public:
         auto innerNode = std::make_shared<NodeType> ();
         innerNode->volume = bvhLeavesBoundingBox;
         innerNode->surfaceArea = bvhLeavesBoundingBox.area();
-        innerNode->leftChild = buildSAHTopDownNode(leftNodes);
-        innerNode->rightChild = buildSAHTopDownNode(rightNodes);
+        innerNode->leftChild = buildLBVHTopDownNode(leftNodes);
+        innerNode->rightChild = buildLBVHTopDownNode(rightNodes);
         return innerNode;
     }
 
