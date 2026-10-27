@@ -48,4 +48,6 @@ with open(benchmarkResultsFileName, 'r') as f:
     hybridMeasurements.plot(Ns)
 
 plt.legend()
+plt.xlabel('N')
+plt.ylabel('Time (microseconds)')
 plt.show()
