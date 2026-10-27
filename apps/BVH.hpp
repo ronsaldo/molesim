@@ -139,8 +139,6 @@ public:
         std::sort(bvhLeaves.begin(), bvhLeaves.end(), [](const NodePtrType &a, const NodePtrType &b){
             return a->mortonCode < b->mortonCode;
         });
-
-        constructBottomUpTopology(bvhLeaves);
     }
 
     void buildBottomUp_LBVH(std::vector<NodePtrType> bvhLeaves)
